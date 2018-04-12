@@ -3,6 +3,8 @@
 #include <string.h>
 char array[9999];
 void PrintToken(char* token);
+void PrintInteger();
+int StartsWith(const char *a, const char *b);
 %}
 
 %option yylineno
@@ -21,6 +23,9 @@ ITEM			(-)
 COMMA			(,)
 TYPE			!![a-zA-Z]+
 SPACE			[\t \n\r]+
+INTEGER			(0x[0-9a-fA-F]+)|(0o[0-7]+)|([-+]?[0-9]+)
+REAL			([-+]?\.[0-9]+)|([-+]?[0-9]+\.[0-9]*)
+EXPONENT		e[-+][0-9]+
 
 
 
@@ -45,6 +50,12 @@ SPACE			[\t \n\r]+
 {ITEM}				PrintToken("ITEM");
 {COMMA}				PrintToken("COMMA");
 {TYPE}				PrintToken("TYPE");
+{INTEGER}			PrintInteger();
+{REAL}{EXPONENT}?	PrintToken("REAL");
+".inf"|".NaN"		PrintToken("REAL");
+
+
+
 {SPACE}		;
 .					{printf("Error %s\n", yytext); exit(0);}
 
@@ -55,3 +66,26 @@ SPACE			[\t \n\r]+
 void PrintToken(char* token) {
 	printf("%d %s %s\n", yylineno, token, yytext);
 }
+
+void PrintInteger() {
+	if (StartsWith("0x",yytext) == 1 || StartsWith("0o",yytext) == 1) PrintToken("INTEGER");
+	else printf("%d INTEGER %d\n", yylineno, atoi(yytext));
+}
+
+
+
+
+
+
+
+
+
+
+
+int StartsWith(const char *a, const char *b)
+{
+   if(strncmp(a, b, strlen(a)) == 0) return 1;
+   return 0;
+}
+
+
