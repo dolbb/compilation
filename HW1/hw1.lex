@@ -34,6 +34,17 @@ SPACE			[\t \n\r]+
 <COMMENT><<EOF>>	{printf("%d COMMENT %s\n", yylineno, array); array[0]='\0';BEGIN(INITIAL);}
 <COMMENT>.			{sprintf(array,"%s%s",array,yytext);}
 
+{STARTSTRUCT}		PrintToken("STARTSTRUCT");
+{ENDSTRUCT}			PrintToken("ENDSTRUCT");
+{LLIST}				PrintToken("LLIST");
+{RLIST}				PrintToken("RLIST");
+{LDICT}				PrintToken("LDICT");
+{RDICT}				PrintToken("RDICT");
+{KEY}				PrintToken("KEY");
+{COMPLEXKEY}		PrintToken("COMPLEXKEY");
+{ITEM}				PrintToken("ITEM");
+{COMMA}				PrintToken("COMMA");
+{TYPE}				PrintToken("TYPE");
 {SPACE}		;
 .					{printf("Error %s\n", yytext); exit(0);}
 
