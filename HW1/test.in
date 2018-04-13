@@ -1,4 +1,6 @@
-.4e-4
-.3e+2
-00.23
-.inf.NaN
+"a\nb\tc"
+'a\nb\tc'
+3.5e+3
+0x1f
+|
+!!type
