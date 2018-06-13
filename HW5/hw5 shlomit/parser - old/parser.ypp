@@ -1,0 +1,690 @@
+%{
+	#include <iostream>
+	#include <map>
+	#include <string>
+	#include <vector>
+	#include "parser.hpp"
+	#include "output.hpp"
+
+	#define YYERROR_VERBOSE 1 
+	#define YYDEBUG 1
+
+	using namespace std;
+	using namespace output;
+	
+	typedef struct {
+		string name;
+		VariableType type;
+		unsigned int offset;
+	} VariableEntry;
+	
+	typedef struct {
+		string name;
+		VariableType returnType;
+		vector<VariableType> argTypes;
+		vector<string> argTypesNames;
+	} FunctionEntry;
+
+	typedef vector<VariableEntry> VariableTable;
+	typedef vector<FunctionEntry> FunctionTable;
+	
+	FunctionTable _FunctionsStack;	
+	vector<VariableTable> _TablesStack;
+	vector<unsigned int> _OffsetsStack;
+	vector<unsigned int> _ArgumentsOffsetsStack;
+	vector<bool> _DefaultsStack;
+	
+	unsigned int _breakables = 0;
+	bool _IfScope = 0;
+	
+	void declarePrint() ;
+	void declarePrinti() ;
+	//example: bool isA = isVarExists(_TablesStack.back(), "a");
+	bool isVarExists(const string& name);
+	//example: bool isFunA = isFunExists(_FunctionsStack, "funcA");
+	bool isFunExists(const string& name);
+	VariableType getVariableType(string name);
+	vector<VariableType>& getFunctionArgsTypes(string name);
+	void declareVariable(VariableType type, string name);
+	void declareArgument(VariableType type, string name);
+	void declareFunction(VariableType type, string name);
+	void openScope();
+	void closeScope();
+	void closeGlobalScope();
+	
+	void assertIfMainUnefined();
+
+	void assertIfMainUnefined();
+	void assert_unexpected_break();
+	void assertIfDefined(string name);
+	void assertIfUndefined(string name);
+	bool isNumericType(VariableType type);
+	void assertIfNotBool(VariableType type);
+	void assertIfNotNumeric(VariableType type);
+	void assertIfTypeNotMatch(VariableType type1, VariableType type2);
+	bool isNumericType(VariableType type);
+	void assertUnexpectedBreak();
+	void assertIfByteTooLarge(string value);
+	void assertIfDefault();
+	
+	bool is_assignable(VariableType src, VariableType dst);
+	bool is_assignable(vector<VariableType> srcs, vector<VariableType> dsts);
+	FunctionEntry& getFunction(string name);
+	
+	extern int yylex();
+	int yyerror(const char * message);
+	extern int yylineno;
+	
+	
+
+%}
+
+%expect 1
+
+%token RETURN
+
+%token LPAREN RPAREN
+%token LBRACE RBRACE
+%token SC
+%token COLON
+
+%right ASSIGN
+%left OR
+%left AND 
+%left RELOP
+%left RELEQ
+%left PLUS MINUS
+%left MULT DIV
+%right NOT
+
+%token INT
+%token BYTE
+%token VOID
+%token COMMA
+
+%token TRUE FALSE
+
+%token IF 
+%token ELSE
+
+%token WHILE
+%token BREAK
+%token BOOL
+%token SWITCH
+%token CASE
+%token DEFAULT
+
+%token NUM
+%token ID
+%token STRING
+%token B
+
+
+
+%%
+Program : MarkerStartGobalScope Funcs {
+	assertIfMainUnefined(); 
+	closeGlobalScope();
+}
+;
+Funcs : FuncDecl Funcs
+| //epsilon
+;
+FuncDecl : FuncHeader {openScope(); } FormalsParen LBRACE Statements RBRACE {
+	/* if($5.isContainsBreak){
+		assertUnexpectedBreak();
+	}*/
+	closeScope(); 
+}
+;
+FuncHeader:  Type ID {
+	//TODO: function compare
+	assertIfDefined($2.name);
+	declareFunction($1.type,$2.name);
+}
+| VOID ID {
+	//TODO: function compare
+	assertIfDefined($2.name);
+	declareFunction(VAR_TYPE_VOID,$2.name);
+}
+;
+
+FormalsParen: LPAREN FormalsList RPAREN
+| LPAREN RPAREN
+;
+
+FormalsList : FormalDecl
+| FormalDecl COMMA FormalsList
+;
+
+FormalDecl : Type ID {
+	assertIfDefined($2.name);
+	declareArgument($1.type,$2.name);
+}
+;
+
+VarDecl : Type ID {
+	assertIfDefined($2.name); 
+	
+	declareVariable($1.type,$2.name); 
+	$$.isContainsBreak = false;
+	$$.type = $1.type;
+}
+;
+
+Statements : Statements Statement {
+	$$.isContainsBreak = $1.isContainsBreak || $2.isContainsBreak;
+}
+| Statement {$$.isContainsBreak = $1.isContainsBreak;}
+;
+
+Statement : LBRACE {openScope(); } Statements RBRACE {
+	closeScope(); 
+	$$.isContainsBreak = $3.isContainsBreak;
+}
+| VarDecl SC {
+	$$.isContainsBreak = false;
+}
+| VarDecl ASSIGN Exp SC {
+	if(!is_assignable($3.type, $1.type)){
+		errorMismatch(yylineno);
+		exit(1);
+	}
+
+	// cout << $1.type <<endl;
+	// cout << $1.name <<endl;
+	// cout << $3.type <<endl;
+	// cout << $3.name <<endl;
+	/*
+		assertIfTypeNotMatch($1.type, $3.type);
+		$$.isContainsBreak = false;
+	*/
+}
+| ID ASSIGN Exp SC{
+	assertIfUndefined($1.name);
+	if(!is_assignable($3.type, getVariableType($1.name))){
+		errorMismatch(yylineno);
+		exit(1);
+	}
+}
+
+| Call SC {
+	$$.type = $1.type;
+	$$.isContainsBreak = false;
+} 
+| RETURN SC {
+
+	 if(_FunctionsStack.back().returnType != VAR_TYPE_VOID){
+		errorMismatch(yylineno);
+		exit(1);
+	 }
+/*
+	$$.returnType = VAR_TYPE_VOID; 
+	$$.isContainsBreak = false;
+	*/
+} 
+| RETURN Exp SC {
+	 if(!is_assignable($2.type, _FunctionsStack.back().returnType)){
+		   errorMismatch(yylineno);
+		   exit(1);
+	 }
+/*
+	$$.returnType = $2.type;
+	$$.isContainsBreak = false;	
+	*/
+} 
+| IfStatement %prec IF {
+	// assertIfNotBool($3.type);
+	// $$.isContainsBreak = $5.isContainsBreak;
+}
+| IfStatement ELSE {openScope();} Statement %prec ELSE {closeScope();}
+| {_breakables++; } WHILE LPAREN Exp RPAREN {assertIfNotBool($4.type); openScope();} Statement{
+	// $$.isContainsBreak = false;
+	closeScope();
+	_breakables--;
+}
+| BREAK SC{
+	$$.isContainsBreak = true;
+//TODO: case the break is not in loop, maybe copy this action to switch?	
+	if(_breakables==0){
+		assertUnexpectedBreak();
+	}
+}
+| SWITCH LPAREN Exp RPAREN {assertIfNotNumeric($3.type); openScope(); _breakables++;} LBRACE CaseList RBRACE SC{
+	//$$.isContainsBreak = false; 
+	closeScope();
+	_breakables --;
+}
+
+;
+IfStatement : IF LPAREN Exp RPAREN  {assertIfNotBool($3.type); openScope(); }  Statement  {closeScope(); }
+;
+
+// MarkerStartScope : {openScope(); };
+
+// MarkerCloseScope : {closeScope(); };
+
+MarkerStartGobalScope: {
+	declarePrint();
+	declarePrinti();
+};
+
+//MarkerStartLoop : {_breakables++; }
+
+CaseList : CaseList CaseStatement
+| CaseStatement
+;
+CaseStatement : CaseDec Statements 
+| CaseDec
+;
+CaseDec : CASE NUM COLON
+| CASE NUM B COLON
+| DEFAULT COLON { assertIfDefault(); }
+;
+Call : ID ExpParen {
+	$$.type = getVariableType($1.name); 
+	if($$.type == VAR_TYPE_UNDEFINED){
+		errorUndefFunc(yylineno, $1.name);
+		exit(1);
+	}
+	
+	FunctionEntry& func = getFunction($1.name);
+	if( !is_assignable($2.argTypes, func.argTypes)){
+		errorPrototypeMismatch(yylineno, $1.name, func.argTypesNames);
+		exit(1);
+	}
+} 
+;
+ExpParen : LPAREN ExpList RPAREN {$$ = $2;}
+| LPAREN RPAREN
+;
+ExpList : Exp {$$.argTypes.push_back($1.type);}
+// | Exp COMMA ExpList {$$ = $3; $$.argTypes.push_front($1.type);}
+| ExpList COMMA Exp {$$ = $1; $$.argTypes.push_back($3.type);}
+;
+Type : INT {$$.type = VAR_TYPE_INT; } 
+| BYTE {$$.type = VAR_TYPE_BYTE; } 
+| BOOL {$$.type = VAR_TYPE_BOOL; } 
+;
+Exp : LPAREN Exp RPAREN {
+	 $$.type = $2.type;
+	// cout << "paren type is " << $2.type << endl;
+ }
+| Exp PLUS Exp{
+	assertIfNotNumeric($1.type);
+	assertIfNotNumeric($3.type);
+	
+	if($1.type == VAR_TYPE_INT || $3.type == VAR_TYPE_INT){
+		$$.type = VAR_TYPE_INT;
+	}
+	else{
+		$$.type = VAR_TYPE_BYTE;
+	}
+}
+| Exp MINUS Exp{
+	assertIfNotNumeric($1.type);
+	assertIfNotNumeric($3.type);
+	
+	if($1.type == VAR_TYPE_INT || $3.type == VAR_TYPE_INT){
+		$$.type = VAR_TYPE_INT;
+	}
+	else{
+		$$.type = VAR_TYPE_BYTE;
+	}
+}
+| Exp MULT Exp{
+	assertIfNotNumeric($1.type);
+	assertIfNotNumeric($3.type);
+	
+	if($1.type == VAR_TYPE_INT || $3.type == VAR_TYPE_INT){
+		$$.type = VAR_TYPE_INT;
+	}
+	else{
+		$$.type = VAR_TYPE_BYTE;
+	}
+}
+| Exp DIV Exp{
+	assertIfNotNumeric($1.type);
+	assertIfNotNumeric($3.type);
+	
+	if($1.type == VAR_TYPE_INT || $3.type == VAR_TYPE_INT){
+		$$.type = VAR_TYPE_INT;
+	}
+	else{
+		$$.type = VAR_TYPE_BYTE;
+	}
+}
+| ID {
+	assertIfUndefined($1.name);
+	$$.type = getVariableType($1.name);
+}
+| Call {$$.type = $1.type; } 
+| NUM { $$.type = VAR_TYPE_INT; }
+| NUM B {
+	assertIfByteTooLarge($1.name);
+	$$.type = VAR_TYPE_BYTE; 
+}
+| STRING { $$.type = VAR_TYPE_STRING; }
+| TRUE { $$.type = VAR_TYPE_BOOL; }
+| FALSE { $$.type = VAR_TYPE_BOOL; }
+| NOT Exp {
+	assertIfNotBool($2.type);
+	$$.type = VAR_TYPE_BOOL; 
+}
+| Exp AND Exp {
+	assertIfNotBool($1.type);
+	assertIfNotBool($3.type);
+	$$.type = VAR_TYPE_BOOL;
+}
+| Exp OR Exp{
+	assertIfNotBool($1.type);
+	assertIfNotBool($3.type);
+	$$.type = VAR_TYPE_BOOL;
+}
+| Exp RELOP Exp{
+	assertIfNotNumeric($1.type);
+	assertIfNotNumeric($3.type);
+	$$.type = VAR_TYPE_BOOL;
+}
+| Exp RELEQ Exp {
+	//assertIfTypeNotMatch($1.type,$3.type);
+	assertIfNotNumeric($1.type);
+	assertIfNotNumeric($3.type);
+	$$.type = VAR_TYPE_BOOL;
+}
+;
+
+
+%%
+
+void declarePrint() {
+	FunctionEntry funEntry;
+	funEntry.name = "print";
+	funEntry.returnType = VAR_TYPE_VOID;
+	funEntry.argTypesNames.push_back("STRING");
+	funEntry.argTypes.push_back(VAR_TYPE_STRING);
+	_FunctionsStack.push_back(funEntry);
+}
+
+void declarePrinti() {
+	FunctionEntry funEntry;
+	funEntry.name = "printi";
+	funEntry.returnType = VAR_TYPE_VOID;
+	funEntry.argTypesNames.push_back("INT");
+	funEntry.argTypes.push_back(VAR_TYPE_INT);
+	_FunctionsStack.push_back(funEntry);
+}
+
+bool isVarExists(const string& name) {
+	for (int i = _TablesStack.size() - 1; i >= 0; i--) {
+		for (vector<VariableEntry>::iterator it = _TablesStack[i].begin();
+			it != _TablesStack[i].end(); ++it) {
+			if (name == it->name) return true;
+		}
+	}
+	return false;
+}
+
+bool isFunExists(const string& name) {
+	for (FunctionTable::iterator it = _FunctionsStack.begin(); it != _FunctionsStack.end(); ++it) {
+		if (name == it->name) return true;
+	}
+	return false;
+}
+
+VariableType getVariableType(string name) {
+	for (int i = _TablesStack.size() - 1; i >= 0; i--) {
+		for (vector<VariableEntry>::iterator it = _TablesStack[i].begin();
+			it != _TablesStack[i].end(); ++it) {
+			if (name == it->name) return it->type;
+		}
+	}
+	for (FunctionTable::iterator it = _FunctionsStack.begin(); it != _FunctionsStack.end(); ++it) {
+		if (name == it->name) return it->returnType;
+	}
+	return VAR_TYPE_UNDEFINED;
+}
+
+vector<VariableType>& getFunctionArgsTypes(string name) {
+	for (FunctionTable::iterator it = _FunctionsStack.begin(); it != _FunctionsStack.end(); ++it) {
+		if (name == it->name) return it->argTypes;
+	}
+}
+
+void declareVariable(VariableType type, string name) {
+	VariableEntry varEntry;
+	varEntry.name = name;
+	varEntry.type = type;
+	varEntry.offset = _OffsetsStack.back();
+	_TablesStack.back().push_back(varEntry);
+	_OffsetsStack.back()++;
+}
+
+void declareArgument(VariableType type, string name) {
+	VariableEntry varEntry;
+	varEntry.name = name;
+	varEntry.type = type;
+	varEntry.offset = _ArgumentsOffsetsStack.back();
+	_TablesStack.back().push_back(varEntry);
+	_FunctionsStack.back().argTypes.push_back(type);
+	switch (type) {
+	case VAR_TYPE_INT:
+		_FunctionsStack.back().argTypesNames.push_back("INT");
+		break;
+	case VAR_TYPE_BYTE:
+		_FunctionsStack.back().argTypesNames.push_back("BYTE");
+		break;
+	case VAR_TYPE_STRING:
+		_FunctionsStack.back().argTypesNames.push_back("STRING");
+		break;
+	case VAR_TYPE_BOOL:
+		_FunctionsStack.back().argTypesNames.push_back("BOOL");
+		break;
+	}
+	_ArgumentsOffsetsStack.back()--;
+}
+
+void declareFunction(VariableType type, string name) {
+	FunctionEntry funEntry;
+	funEntry.name = name;
+	funEntry.returnType = type;
+	_FunctionsStack.push_back(funEntry);
+	unsigned int currentOffset = -1;
+	_ArgumentsOffsetsStack.push_back(currentOffset);
+}
+
+void openScope() {
+
+	_TablesStack.push_back(VariableTable());
+
+	unsigned int currentOffset;
+	if (_OffsetsStack.empty()) {
+		currentOffset = 0;
+	}
+	else {
+		currentOffset = _OffsetsStack.back();
+	}
+	_OffsetsStack.push_back(currentOffset);
+	_DefaultsStack.push_back(false);
+}
+
+void closeScope() {
+	endScope();
+	VariableTable& vars = _TablesStack.back();
+	for (vector<VariableEntry>::iterator it = vars.begin(); it != vars.end(); ++it) {
+		string id = it->name;
+		int offset = it->offset;
+
+		switch (it->type) {
+		case VAR_TYPE_INT:
+			printID(id, offset, "INT");
+			break;
+		case VAR_TYPE_BYTE:
+			printID(id, offset, "BYTE");
+			break;
+		case VAR_TYPE_STRING:
+			printID(id, offset, "STRING");
+			break;
+		case VAR_TYPE_BOOL:
+			printID(id, offset, "BOOL");
+			break;
+		}
+	}
+
+	_TablesStack.pop_back();
+	_OffsetsStack.pop_back();
+	_DefaultsStack.pop_back();
+}
+
+void closeGlobalScope() {
+	endScope();
+	for (FunctionTable::iterator it = _FunctionsStack.begin(); it != _FunctionsStack.end(); ++it){
+	//while (!_FunctionsStack.empty()) {
+		//FunctionEntry& func = _FunctionsStack.back();
+		string functionType;
+		switch (it->returnType) {
+		case VAR_TYPE_INT:
+			functionType = makeFunctionType("INT", it->argTypesNames);
+			break;
+		case VAR_TYPE_BYTE:
+			functionType = makeFunctionType("BYTE", it->argTypesNames);
+			break;
+		case VAR_TYPE_STRING:
+			functionType = makeFunctionType("STRING", it->argTypesNames);
+			break;
+		case VAR_TYPE_BOOL:
+			functionType = makeFunctionType("BOOL", it->argTypesNames);
+			break;
+		default:
+			functionType = makeFunctionType("VOID", it->argTypesNames);
+			break;
+		}
+		printID(it->name, 0, functionType);
+		//_FunctionsStack.pop_back();
+	}
+}
+
+void assertIfMainUnefined() {
+	for (FunctionTable::iterator it = _FunctionsStack.begin(); it != _FunctionsStack.end(); ++it) {
+		vector<VariableType> args= it->argTypes;
+		if ("main" == it->name) {
+			if (it->argTypes.size() == 0 && it->returnType == VAR_TYPE_VOID) {
+				return;
+			}
+		}
+	}
+	errorMainMissing();
+	exit(1);
+}
+
+void assert_unexpected_break() {
+	errorUnexpectedBreak(yylineno);
+	exit(1);
+}
+
+void assertIfDefined(string name) {
+	if (isVarExists(name) || (isFunExists(name))) {
+		output::errorDef(yylineno, name.c_str());
+		exit(1);
+	}
+}
+
+void assertIfUndefined(string name) {
+	if (getVariableType(name) == VAR_TYPE_UNDEFINED) {
+		errorUndef(yylineno, name.c_str());
+		exit(1);
+	}
+}
+
+void assertIfNotBool(VariableType type) {
+	if (type != VAR_TYPE_BOOL) {
+		errorMismatch(yylineno);
+		exit(1);
+	}
+}
+
+void assertIfNotNumeric(VariableType type) {
+	if (!isNumericType(type)) {
+		errorMismatch(yylineno);
+		exit(1);
+	}
+}
+
+
+void assertIfTypeNotMatch(VariableType type1, VariableType type2) {
+	if (type1 == VAR_TYPE_UNDEFINED || type2 == VAR_TYPE_UNDEFINED
+		|| ((type1 == VAR_TYPE_BOOL) != (type2 == VAR_TYPE_BOOL))
+		|| (isNumericType(type1) != isNumericType(type2))) {
+
+		errorMismatch(yylineno);
+		exit(1);
+	}
+}
+
+bool isNumericType(VariableType type) {
+	return type == VAR_TYPE_BYTE
+		|| type == VAR_TYPE_INT;
+}
+
+void assertUnexpectedBreak(){
+	errorUnexpectedBreak(yylineno);
+	exit(1);
+}
+
+void assertIfByteTooLarge(string value) {
+	int i = atoi(value.c_str());
+	// int i = std::stoi(value, nullptr, 10);
+	if (i > 255)
+	{
+		errorByteTooLarge(yylineno, value);
+		exit(1);
+	}
+}
+
+void assertIfDefault() {
+	if (_DefaultsStack.back()){
+		output::errorTooManyDefaults(yylineno);
+		exit(1);
+	}
+	else{
+		_DefaultsStack.back() = true;
+	}
+}
+
+bool is_assignable(VariableType src, VariableType dst){
+	 if(src == dst) 
+		 return true;
+	 if(src == VAR_TYPE_BYTE && dst == VAR_TYPE_INT) 
+		 return true;
+	 return false;
+}
+ 
+ bool is_assignable(vector<VariableType> srcs, vector<VariableType> dsts){
+	 int len = dsts.size();
+	 if(srcs.size() != len) 
+		 return false;
+	 for(int i=0; i<len; i++){
+		 if(!is_assignable(srcs[i], dsts[i]))
+			 return false;
+	 }
+	 return true;
+ }
+
+ FunctionEntry& getFunction(string name) {
+	for (FunctionTable::iterator it = _FunctionsStack.begin(); it != _FunctionsStack.end(); ++it) {
+		if (name == it->name) return *it;
+	}
+ }
+ 
+int main()
+{
+	//yydebug = 1;
+	return yyparse();
+}
+
+
+int yyerror(const char * message)
+{
+	errorSyn(yylineno);
+	exit(1);
+}
