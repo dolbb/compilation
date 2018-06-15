@@ -1,5 +1,0 @@
-#!/bin/sh
-
-flex hw1.lex
-gcc -ll lex.yy.c
-./a.out<test.in>test.out
