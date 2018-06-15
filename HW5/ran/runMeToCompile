@@ -1,0 +1,4 @@
+#!/bin/sh
+
+g++ -o hw5 *.cpp
+./hw5 
