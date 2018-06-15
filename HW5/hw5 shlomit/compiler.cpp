@@ -15,8 +15,8 @@ using namespace std;
 #define REG_LAST (25)
 #define USER_REGS_NUM (REG_LAST +1 - REG_FIRST)
 
-#ifndef CODE
-#define CODE (CodeBuffer::instance())
+#ifndef BP
+#define BP (CodeBuffer::instance())
 #endif
 
 #define DIV_ERROR_TEXT ("Error division by zero\\n")
@@ -39,9 +39,7 @@ string divErrorLabelName = "divByZero";
 	
 string my_to_string(int num)
 {
-    ostringstream os;
-	os << num;
-    return os.str();
+    return "";
 }
 
 void my_assert(bool assertion){
