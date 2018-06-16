@@ -18,6 +18,8 @@ using namespace std;
 #define $SP_ADDRSS "($sp)"
 #define DEBUG
 
+int currentReg = FIRST_REGISTER;
+
 string toString(int num)
 {
     ostringstream os;
@@ -36,23 +38,18 @@ void ASSERT(bool condition){
 }
 
 void ASSERT_REG(int reg) {
+	#ifdef DEBUG
 	if (reg <= FIRST_REGISTER && reg >= LAST_REGISTER) return;
 	cout << "\033[1;31m failed on reg $\033[0m" << reg << endl;
 	ASSERT(false);
+	#endif
 }
 
 class RegisterManager{
-	int currentReg; 
 	void doRegOp(string op, string left, string right){
 		BP.emit(op + " " + left + ", " + right);
 	}
-public:
-	RegisterManager(){
-		currentReg = FIRST_REGISTER;
-	}
-	~RegisterManager(){
-		//BP.printCodeBuffer();
-	}
+public:	
 	string getCurrReg() {
 		return "$" + toString(currentReg);
 	}
@@ -84,38 +81,47 @@ public:
 };
 
 
-class Assembly {
-public:
-	Assembly(){};
-	void multiply(string regLeftRes, string regRight){
+class AssemblyCommands {
+	RegisterManager mgr;
+	void handleByte(string regRes, bool isB){
+		if (isB){
+			BP.emit("# byte mask");
+			string tmpReg = mgr.getRegAndPromote();	
+			mgr.storeToRegImm(tmpReg, 256);
+			BP.emit("div " + regRes + "," + tmpReg);
+			BP.emit("mfhi " + regRes);
+			mgr.freeCurrReg();
+			
+		}
+	}
+public:	
+	void multiply(string regLeftRes, string regRight, bool isB){
 		BP.emit("mult " + regLeftRes + "," + regRight);
 		BP.emit("mflo " + regLeftRes);
+		handleByte(regLeftRes, isB);
 	}
-	void divide(string regLeftRes, string regRight){
+	void divide(string regLeftRes, string regRight, bool isB){
 		//TODO - check for DIVIEBYZERO
 		BP.emit("div " + regLeftRes + "," + regRight);
 		BP.emit("mflo " + regLeftRes);
+		handleByte(regLeftRes, isB);
 	}
 	void sub(string regLeftRes, string regRight, bool isB){
 		if (isB) {
 			BP.emit("addiu " + regLeftRes + ", " + regLeftRes + ", 256");
 		}
 		BP.emit("subu " + regLeftRes + "," + regLeftRes + "," + regRight);
+		handleByte(regLeftRes, isB);
 	}
-	void add(string regLeftRes, string regRight){
+	void add(string regLeftRes, string regRight, bool isB){
 		BP.emit("addu " + regLeftRes + ","+regLeftRes+","+regRight);
+		handleByte(regLeftRes, isB);
 	}
 	
 	
 	
 	
 };
-
-
-
-
-
-
 
 
 
