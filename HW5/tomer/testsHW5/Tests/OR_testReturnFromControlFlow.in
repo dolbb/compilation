@@ -1,0 +1,88 @@
+void returnFromWhile()
+{
+	int x = 0;
+	while (x<10)
+	{
+		print("Check early exit from while...\n");
+		return;
+		x = x+1;
+		print("failed... let's try again\n");
+	}
+}
+
+int returnFromWhile2()
+{
+	int x=2;
+	while (x<10)
+	{
+		print("Check early exit from while...\n");
+		return x;
+		x = x+1;
+		print("failed... let's try again\n");
+	}
+}
+
+void returnFromSwitchInt(){
+	print("check early exit from switch...\n");
+	int x = 5;
+	switch (x){
+		case 2: print("failed2\n"); break;
+		case 5: return;break;
+		case 8: print("failed8\n"); break;
+	};
+}
+
+int returnFromSwitchInt2(){
+	print("check early exit from switch...\n");
+	int x = 5;
+	switch (x){
+		case 2: print("failed2\n"); break;
+		case 5: return x;break;
+		case 8: print("failed8\n"); break;
+	};
+	return 0;
+}
+
+void returnFromSwitchByte(){
+	print("check early exit from switch...\n");
+	byte x = 4b;
+	switch (x){
+		case 1b: print("failed1b\n"); break;
+		case 4b: return;break;
+		case 7b: print("failed7b\n"); break;
+	};
+}
+
+byte returnFromSwitchByte2(){
+	print("check early exit from switch...\n");
+	byte x = 4b;
+	switch (x){
+		case 1b: print("failed1b\n"); break;
+		case 4b: return x;break;
+		case 7b: print("failed7b\n"); break;
+	};
+	return 0b;
+}
+
+bool returnFromSwitchBool()
+{
+	print("check early exit from switch...");
+	byte x = 6b;
+	switch (x){
+		case 3b: print("failed3b\n"); break;
+		case 6b: return true;break;
+		case 9b: print("failed9b\n"); break;
+	};
+	return false;
+}
+
+void main()
+{
+	returnFromWhile();
+	int a1 = returnFromWhile2();
+	returnFromSwitchInt();
+	int a2 = returnFromSwitchInt2();
+	returnFromSwitchByte();
+	byte b1 = returnFromSwitchByte2();
+	if(returnFromSwitchBool()) print("SUCCESS\n");
+}

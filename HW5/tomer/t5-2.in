@@ -1,0 +1,15 @@
+byte zero() { return 0b; }
+int willThisNeedManyRegisters(int a, int c, int d, int e, int f, int g, int h) {
+    return zero()*a*a+a*a+c*d*a-e*c*f/g+g+h*h*h-c;
+}
+
+void main() {
+    printi(2+3*6/4-1);
+    print("\n");
+    printi(23b*12+459);
+    print("\n");
+    printi(willThisNeedManyRegisters(0,1,2,3,4,5,6));
+    print("\n");
+    int x = 12 / zero();
+    print("this should not happen");
+}

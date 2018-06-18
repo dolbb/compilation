@@ -1,0 +1,39 @@
+int Int(){print("set!\n");return 500;}
+void WasHere(){print("was here\n");}
+void main(){
+int target = 0;
+while(target == 0) target = Int();
+printi(target);
+print("\n");target = 0;
+while(true){
+int t6 = Int();
+printi(t6);
+break;
+}
+print("\n");while(true){
+int t6;
+t6 = Int();
+printi(t6);
+break;
+}
+print("\n");while(target == 0) {target = Int();}
+printi(target);
+print("\n");
+target = 0;
+while(true) {WasHere();break;}
+while(true) if (true) {WasHere();break;}
+while(true) if (true) {WasHere();break;} 
+	else int x;
+while(true)  if (false) int x; 
+	else {WasHere();break;}
+while(true) {
+	while (true) {WasHere();break;}
+break;}
+while(true) {
+switch (target) {
+case 0: WasHere();break;
+case 1b: int x;break;
+};
+break;}
+while(target==0) while (target == 0) target = Int();
+}

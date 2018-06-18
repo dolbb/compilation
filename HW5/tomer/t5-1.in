@@ -1,0 +1,13 @@
+void printByValue(bool val) {
+	if (val)
+		print("val is true\n");
+	else {
+		printi(42);
+		print("\n");
+	}
+}
+
+void main() {
+	printByValue(true);
+	printByValue(false);
+}

@@ -1,0 +1,10 @@
+
+
+void main(){
+
+print("1\n");
+print("1\n");
+return;
+print("1\n");
+
+}

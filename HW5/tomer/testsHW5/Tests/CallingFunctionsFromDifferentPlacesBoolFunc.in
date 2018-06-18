@@ -1,0 +1,269 @@
+//Call can come from Statement and from Exp.
+
+bool funcByteTrue() { 
+	print("funcByteTrue\n");
+	return true;
+}
+bool funcByteFalse() { 
+	print("funcByteFalse\n");
+	return false;
+}
+
+bool helperFunc1True() { 
+	return funcByteTrue();
+}
+
+bool helperFunc1False() { 
+	return funcByteTrue();
+}
+
+bool helperFunc2True() { 
+	return (funcByteFalse());
+}
+
+bool helperFunc2False() { 
+	return (funcByteFalse());
+}
+
+void funcHelper1(bool a) {
+	if (a) { 
+		print("funcHelper1-1\n");
+	}
+	else {
+		print("funcHelper1-2\n");
+	}
+}
+
+void funcHelper2(bool a, bool bb) {
+	if (a) { 
+		print("funcHelper2-1\n");
+	}
+	else {
+		print("funcHelper2-2\n");
+	}
+	if (bb) { 
+		print("funcHelper2-3\n");
+	}
+	else {
+		print("funcHelper2-4\n");
+	}
+}
+
+void main() {
+	
+	{funcByteTrue();}
+		
+	bool z1 = funcByteTrue();
+	if (z1) { 
+		print("true1\n");
+	}
+	else {
+		print("false1\n");
+	}
+	bool z2 = (funcByteTrue());
+	if (z2) { 
+		print("true2\n");
+	}
+	else {
+		print("false2\n");
+	}
+	
+	
+	bool z3 = funcByteFalse();
+	if (z3) { 
+		print("true3\n");
+	}
+	else {
+		print("false3\n");
+	}
+	bool z4 = (funcByteFalse());
+	if (z4) { 
+		print("true4\n");
+	}
+	else {
+		print("false4\n");
+	}
+	
+	bool c;
+	c = funcByteTrue();
+	if (c) { 
+		print("true5\n");
+	}
+	else {
+		print("false5\n");
+	}
+	c = (funcByteTrue());
+	if (c) { 
+		print("true6\n");
+	}
+	else {
+		print("false6\n");
+	}
+	
+	c = funcByteFalse();
+	if (c) { 
+		print("true7\n");
+	}
+	else {
+		print("false7\n");
+	}
+	c = (funcByteFalse());
+	if (c) { 
+		print("true8\n");
+	}
+	else {
+		print("false8\n");
+	}
+	
+	funcByteTrue();
+	funcByteFalse();
+	print("delimiter5\n");
+	
+	//return funcByteTrue\False():
+	bool d = helperFunc1True();
+	if (d) { 
+		print("true9\n");
+	}
+	else {
+		print("false9\n");
+	}
+	
+	bool dd = helperFunc1False();
+	if (dd) { 
+		print("true10\n");
+	}
+	else {
+		print("false10\n");
+	}
+
+	//return (funcByte()):
+	bool e = helperFunc2True();
+	if (e) { 
+		print("true9\n");
+	}
+	else {
+		print("false9\n");
+	}
+	
+	bool ff = helperFunc2False();
+	if (ff){ 
+		print("true10\n");
+	}
+	else {
+		print("false10\n");
+	}
+	
+	if (funcByteTrue() )       { print("insideIf1\n"); }
+	print("delimiter9\n");
+	if (not (funcByteTrue()))   { print("insideIf2\n"); }
+	print("delimiter10\n");
+	if (funcByteTrue())     { print("insideIf3\n"); }
+	print("delimiter11\n");
+	if (not (funcByteTrue())) { print("insideIf4\n"); }
+	print("delimiter12\n");
+	if (true) funcByteTrue();
+	print("delimiter13\n");
+	if (true) { funcByteTrue(); }
+	print("delimiter14\n");
+	
+	if (funcByteFalse() )       { print("insideIf1\n"); } else { print("insideElse1\n"); }
+	print("delimiter9\n");
+	if (not (funcByteFalse()))   { print("insideIf2\n"); }else { print("insideElse2\n"); }
+	print("delimiter10\n");
+	if (funcByteFalse())     { print("insideIf3\n"); } else { print("insideElse3\n"); }
+	print("delimiter11\n");
+	if (not (funcByteFalse())) { print("insideIf4\n"); } else { print("insideElse4\n"); }
+	print("delimiter12\n");
+	if (true)  funcByteFalse(); 
+	print("delimiter13\n");
+	if (true)  funcByteFalse(); 
+	print("delimiter14\n");
+	
+	
+	while (funcByteTrue())       { print("insideWhile1"); break;}
+	print("delimiter15\n");
+	while (not (funcByteTrue()))   { print("insideWhile2"); break;}
+	print("delimiter16\n");
+	while (funcByteTrue())     { print("insideWhile3"); break;}
+	print("delimiter17\n");
+	while (not (funcByteTrue())) { print("insideWhile4"); break;}
+	print("delimiter18\n");
+	
+	while (true) { funcByteTrue(); break; }
+	print("delimiter19\n");
+	
+	byte u = 2b;
+	switch (u) { case 2: { funcByteTrue(); } break; };
+	print("delimiter23\n");
+	switch (u) { case 2:   funcByteTrue();   break; };
+	print("delimiter24\n");
+	
+	switch (u) { case 2: { funcByteFalse(); } break; };
+	print("delimiter23\n");
+	switch (u) { case 2:   funcByteFalse();   break; };
+	print("delimiter24\n");
+	
+	byte ub = 2b;
+	switch (ub) { case 2b: { funcByteTrue(); } break; };
+	print("delimiter25\n");
+	switch (ub) { case 2b:   funcByteTrue();   break; };
+	print("delimiter26\n");
+	
+	switch (ub) { case 2b: { funcByteFalse(); } break; };
+	print("delimiter25\n");
+	switch (ub) { case 2b:   funcByteFalse();   break; };
+	print("delimiter26\n");
+	
+	funcHelper1(funcByteTrue());
+	funcHelper2(funcByteTrue(),funcByteTrue());
+	
+	funcHelper1(funcByteFalse());
+	funcHelper2(funcByteFalse(),funcByteFalse());
+	
+	//Need to check every exp with (funcByte())
+	
+	//bool bb1 = funcByte()*funcByte(); printi(bb1);
+	
+	//bool bb2 = funcByte()/funcByte(); printi(bb2);
+	
+	//bool bb3 = funcByte()+funcByte(); printi(bb3);
+	
+	//bool bb4 = funcByte()-funcByte(); printi(bb4);
+	
+	//calling true
+	bool bb5 =     not funcByteTrue();   if (bb5) { print("true1\n"); } else { print("false1\n");}
+	bool aa5 = not (not funcByteTrue()); if (aa5) { print("true2\n"); } else { print("false\n");}
+	
+	bool bb6 = funcByteTrue() and funcByteTrue();       if (bb6) { print("true3\n"); } else { print("false3\n");}
+	bool aa6 = not (funcByteTrue() and funcByteTrue()); if (aa6) { print("true4\n"); } else { print("false4\n");}
+	
+	bool bb7 = funcByteTrue() or funcByteTrue();       if (bb7) { print("true5\n"); } else { print("false5\n");}
+	bool aa7 = not (funcByteTrue() or funcByteTrue()); if (aa7) { print("true6\n"); } else { print("false6\n");}
+	
+	//calling false
+	bool bb8 =     not funcByteFalse();   if (bb8) { print("true7\n"); } else { print("false7\n");}
+	bool aa8 = not (not funcByteFalse()); if (aa8) { print("true8\n"); } else { print("false8\n");}
+	
+	bool bb9 = funcByteFalse() and funcByteFalse();       if (bb9) { print("true9\n"); } else { print("false9\n");}
+	bool aa9 = not (funcByteFalse() and funcByteTrue()); if (aa9) { print("true10\n"); } else { print("false10\n");}
+	
+	bool bb10 = funcByteFalse() or funcByteFalse();       if (bb10) { print("true11\n"); } else { print("false11\n");}
+	bool aa10 = not (funcByteFalse() or funcByteFalse()); if (aa10) { print("true12\n"); } else { print("false12\n");}
+	
+	//calling true and then false
+	
+	bool bb11 = funcByteTrue() and funcByteFalse();       if (bb11) { print("true9\n"); } else { print("false9\n");}
+	bool aa11 = not (funcByteTrue() and funcByteFalse()); if (aa11) { print("true10\n"); } else { print("false10\n");}
+	
+	bool bb12 = funcByteTrue() or funcByteFalse();       if (bb12) { print("true11\n"); } else { print("false11\n");}
+	bool aa12 = not (funcByteTrue() or funcByteFalse()); if (aa12) { print("true12\n"); } else { print("false12\n");}
+	
+	//calling false and then true
+	
+	bool bb13 = funcByteFalse() and funcByteTrue();       if (bb13) { print("true9\n"); } else { print("false9\n");}
+	bool aa13 = not (funcByteFalse() and funcByteTrue()); if (aa13) { print("true10\n"); } else { print("false10\n");}
+	
+	bool bb14 = funcByteFalse() or funcByteTrue();       if (bb14) { print("true11\n"); } else { print("false11\n");}
+	bool aa14 = not (funcByteFalse() or funcByteTrue()); if (aa14) { print("true12\n"); } else { print("false12\n");}
+	
+}

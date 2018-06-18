@@ -1,0 +1,145 @@
+
+int checkInFunc(int a){
+	if(a<5){
+		int bb = 1;
+		print("if->return exp sc\n");
+		return a*4-bb;
+	}
+	else{
+		int bb = 1;
+		print("else->return exp sc\n");
+		return a*4+bb;
+	}
+}
+
+void fux(int a, byte c){
+	if( a+5 < c){
+		print("error\n");		
+	}
+	else{
+		if(true){
+			print("else->if\n");
+		}
+		else{
+			print("error\n");
+		}
+		
+		if(false){	
+			print("sssss\n");
+		}else{
+			print("else->else\n");
+		}
+		
+		while(a < 10 ){
+			print("else->while\n");
+			if(false){
+				int d = 7;
+				print("error\n");
+			}
+			else{
+				print("else->break\n");
+				break;
+			}
+		}
+		int xx = 7;
+		switch(xx){
+			case 7:
+				print("else->switch\n");
+				break;
+			case 6:
+				print("error\n");
+				break;
+		};
+				
+		checkInFunc(8);
+		
+		print("else->type ID assign Exp sc\n");
+		int x = 6;
+		printi(x);
+		print("\n");
+		print("else->ID assign Exp sc\n");
+		x = 8;
+		printi(x);
+		print("\n");
+		print("else->type ID sc\n");
+		int y;
+		y=5;
+		printi(y);
+		print("\n");
+		print("else->return sc\n");
+		return;
+	}
+	print("error\n");
+}
+
+void main(){
+	int a = 7;
+	byte c = 25 b;
+	
+	print("start\n");
+	
+	if( a+3 < c){
+		if(true){
+			print("if->if\n");
+		}
+		else{
+			print("error\n");
+		}
+		
+		if(false){	
+			print("error\n");
+		}else{
+			print("if->else\n");
+		}
+		
+		a=9;
+		while(a < 10 ){
+			print("if->while\n");
+			if(a == 9){
+				int d = 7;
+				print("if->break\n");
+				break;
+			}
+			else{
+				print("error\n");
+			}
+		}
+		int xx = 7;
+		switch(xx){
+			case 7:
+				print("if->switch\n");
+				break;
+			case 6:
+				print("error\n");
+				break;
+		};
+		
+		
+		checkInFunc(3);
+		
+		print("if->type ID assign Exp sc\n");
+		int x = 6;
+		printi(x);
+		print("\n");
+		print("if->ID assign Exp sc\n");
+		x = 8;
+		printi(x);
+		print("\n");
+		print("if->type ID sc\n");
+		int y;
+		y = 8;
+		printi(y);
+		print("\n");
+		print("go check all the same in else\n");
+		fux(1,5 b);
+		
+		print("if->return sc\n");
+		return;
+		
+	}
+	else{
+		print("error\n");
+	}		
+	
+	print("error\n");	
+}

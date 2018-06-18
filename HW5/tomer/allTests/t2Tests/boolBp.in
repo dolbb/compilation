@@ -1,0 +1,8 @@
+void main(){
+	int x=3;
+	bool r=true;
+	bool y = r or false;
+	if(y)
+	print("LIRAN\n");
+
+}

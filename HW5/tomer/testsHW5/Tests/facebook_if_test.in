@@ -1,0 +1,16 @@
+void main()
+{
+	int a=50;
+	int jg=17;
+	if(jg>a and jg>10)
+	{
+		print("jg=");
+		printi(jg);
+		
+	}else{
+		print("2a=");
+		printi(2*a);
+	}
+	print("\n");
+
+}

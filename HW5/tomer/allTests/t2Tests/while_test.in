@@ -1,0 +1,27 @@
+void printer(int a)
+{
+	print("Printing number from 0 to ");
+	printi(a);
+	print("\n");
+	while(a>=0){
+		int dummyvar;
+		bool dummybool;
+		printi(a);
+		print("\n");
+		a = a - 1;
+	}
+	print("Printing done!\n");
+}
+
+void main()
+{
+	printer(5);
+	printer(10);
+	print("Byte test - testing addition and multiplication\n");
+	byte numb = 150b+150b;
+	printi(numb);
+	print("\n");
+	numb = 130b*2b;
+	printi(numb);
+	print("\n");
+}

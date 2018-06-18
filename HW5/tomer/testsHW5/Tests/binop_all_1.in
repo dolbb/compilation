@@ -1,0 +1,122 @@
+void main()
+{
+	//binop of int:
+	printi(2+3);
+	print("\n");
+	
+	printi(10-8);
+	print("\n");
+	
+	printi(2*3);
+	print("\n");
+	
+	printi(4/2);
+	print("\n");
+	
+	printi(2+3*5/5);
+	print("\n");
+	
+	printi(2*3+5*5);
+	print("\n");
+	
+	printi(6/3+200/5);
+	print("\n");
+	
+	printi(5*5-2*3);
+	print("\n");
+	
+	printi(300/3-200/5);
+	print("\n");
+
+	printi(5*5-2*3);
+	print("\n");
+	
+	printi(300/3-200/5);
+	print("\n");
+	
+	//binop of byte:
+	
+	printi(2 b+3 b);
+	print("\n");
+	
+	printi(10 b-8 b);
+	print("\n");
+	
+	printi(2 b*3 b);
+	print("\n");
+	
+	printi(4b/2b);
+	print("\n");
+	
+	printi(2b+3b*5b/5b);
+	print("\n");
+	
+	printi(2b*3b+5b*5b);
+	print("\n");
+	
+	printi(6b/3b+200b/5b);
+	print("\n");
+	
+	printi(5b*5b-2b*3b);
+	print("\n");
+	
+	printi(100b/2b-200b/10b);
+	print("\n");
+
+	printi(5b*5b-2b*3b);
+	print("\n");
+	
+	printi(100b/2b-200b/20b);
+	print("\n");
+	
+	//binop of byte with int
+	
+	printi(2 b+3);
+	print("\n");
+	
+	printi(10 b-8);
+	print("\n");
+	
+	printi(2 b*3);
+	print("\n");
+	
+	printi(4b/2);
+	print("\n");
+	
+	printi(2+3b);
+	print("\n");
+	
+	printi(10-8b);
+	print("\n");
+	
+	printi(2*3b);
+	print("\n");
+	
+	printi(4/2b);
+	print("\n");
+	
+	printi(2b+3*5b/5);
+	print("\n");
+	
+	printi(2b*3+5b*5);
+	print("\n");
+	
+	printi(6b/3+200b/5);
+	print("\n");
+	
+	printi(5b*5-2b*3);
+	print("\n");
+	
+	printi(100b/2-200b/10);
+	print("\n");
+
+	printi(5b*5-2b*3);
+	print("\n");
+	
+	printi(100b/2-200b/20);
+	print("\n");
+	
+	
+	
+	
+}

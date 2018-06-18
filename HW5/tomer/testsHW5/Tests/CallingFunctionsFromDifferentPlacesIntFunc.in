@@ -1,0 +1,147 @@
+//Call can come from Statement and from Exp.
+
+int funcInt() { 
+	print("funcInt\n");
+	return 9;
+}
+
+int helperFunc1() { 
+	return funcInt();
+}
+
+int helperFunc2() { 
+	return (funcInt());
+}
+
+void funcHelper1(int a) {
+	print("funcHelper1-1\n");
+	printi(a);
+	print("funcHelper1-2\n");
+}
+
+void funcHelper2(int a, int bb) {
+	print("funcHelper2-1\n");
+	printi(a);
+	print("funcHelper2-2\n");
+	printi(bb);
+	print("funcHelper2-3\n");
+}
+
+
+void main() {
+	
+	{funcInt();}
+		
+	int z1 = funcInt();
+	printi(z1);
+	print("\n");
+	print("delimiter1\n");
+	int z2 = (funcInt());
+	printi(z2);
+	print("\n");
+	print("delimiter2\n");
+	
+	int c;
+	c = funcInt();
+	printi(c);
+	print("\n");
+	print("delimiter3\n");
+	c = (funcInt());
+	printi(c);
+	print("\n");
+	print("delimiter4\n");
+	
+	funcInt();
+	print("delimiter5\n");
+	printi(funcInt());
+	print("delimiter6\n");
+	
+	//return funcInt():
+	helperFunc1();
+	print("delimiter7\n");
+	//return (funcInt()):
+	helperFunc2();
+	print("delimiter8\n");
+	if (funcInt() == 9 )       { print("insideIf1\n"); }
+	print("delimiter9\n");
+	if (not (funcInt() == 9))   { print("insideIf2\n"); }
+	print("delimiter10\n");
+	if (((funcInt() == 9)))     { print("insideIf3\n"); }
+	print("delimiter11\n");
+	if (not ((funcInt() == 9))) { print("insideIf4\n"); }
+	print("delimiter12\n");
+	if (true) funcInt();
+	print("delimiter13\n");
+	if (true) { funcInt(); }
+	print("delimiter14\n");
+	
+	while ((funcInt() == 9))       { print("insideWhile1"); break;}
+	print("delimiter15\n");
+	while (not ((funcInt() == 9)))   { print("insideWhile2"); break;}
+	print("delimiter16\n");
+	while (((funcInt() == 9)))     { print("insideWhile3"); break;}
+	print("delimiter17\n");
+	while (not ((funcInt() == 9))) { print("insideWhile4"); break;}
+	print("delimiter18\n");
+	
+	while (true) { funcInt(); break; }
+	print("delimiter19\n");
+	
+	switch (funcInt())   { case 9: {print("insideCase2"); } break; };
+	print("delimiter20\n");
+	switch (funcInt())   { case 2: {print("insideCase2"); } break; };
+	print("delimiter21\n");
+	switch ((funcInt())) { case 9: {print("insideCase2"); } break; };
+	print("delimiter22\n");
+	switch ((funcInt())) { case 2: {print("insideCase2"); } break; };
+	print("delimiter23\n");
+	
+	int u = 2;
+	switch (u) { case 2: { funcInt(); } break; };
+	print("delimiter23\n");
+	switch (u) { case 2:   funcInt();   break; };
+	print("delimiter24\n");
+	
+	byte ub = 2b;
+	switch (ub) { case 2b: { funcInt(); } break; };
+	print("delimiter25\n");
+	switch (ub) { case 2b:   funcInt();   break; };
+	print("delimiter26\n");
+	
+	funcHelper1(funcInt());
+	funcHelper2(funcInt(),funcInt());
+	
+	//Need to check every exp with (funcInt())
+	
+	int bb1 = funcInt()*funcInt(); printi(bb1);
+	
+	int bb2 = funcInt()/funcInt(); printi(bb2);
+	
+	int bb3 = funcInt()+funcInt(); printi(bb3);
+	
+	int bb4 = funcInt()-funcInt(); printi(bb4);
+	
+	//bool bb5 =     not funcInt();   if (bb5) { print("true1\n"); } else { print("false1\n");}
+	//bool aa5 = not (not funcInt()); if (aa5) { print("true2\n"); } else { print("false\n");}
+	
+	//bool bb6 = funcInt() and funcInt();       if (bb6) { print("true3\n"); } else { print("false3\n");}
+	//bool aa6 = not (funcInt() and funcInt()); if (aa6) { print("true4\n"); } else { print("false4\n");}
+	
+	//bool bb7 = funcInt() or funcInt();       if (bb7) { print("true5\n"); } else { print("false5\n");}
+	//bool aa7 = not (funcInt() or funcInt()); if (aa7) { print("true6\n"); } else { print("false6\n");}
+	
+	bool bb8 = funcInt() > funcInt();       if (bb8) { print("true7\n"); } else { print("false7\n");}
+	bool aa8 = not (funcInt() > funcInt()); if (aa8) { print("true8\n"); } else { print("false8\n");}
+	
+	bool bb9 = funcInt() >= funcInt();       if (bb9) { print("true9\n"); } else { print("false9\n");}
+	bool aa9 = not (funcInt() >= funcInt()); if (aa9) { print("true99\n"); } else { print("false99\n");}
+		
+	bool bb10 = funcInt() < funcInt();        if (bb10) { print("true10\n"); } else { print("false10\n");}
+	bool aa10 = not (funcInt() < funcInt());  if (aa10) { print("true11\n"); } else { print("false11\n");}
+	
+	bool bb11 = funcInt() <= funcInt();       if (bb11) { print("true12\n"); } else { print("false12\n");}
+	bool aa11 = not (funcInt() <= funcInt()); if (aa11) { print("true13\n"); } else { print("false13\n");}
+	
+	bool bb12 = funcInt() == funcInt(); if (bb12) { print("true14\n"); } else { print("false14\n");}
+	bool aa12 = (funcInt() == funcInt()); if (aa12) { print("true15\n"); } else { print("false15\n");}
+}

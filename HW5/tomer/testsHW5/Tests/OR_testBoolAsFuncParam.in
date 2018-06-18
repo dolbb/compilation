@@ -1,0 +1,267 @@
+bool funBool(bool var){
+if (var) print("var is true :)\n");
+else print("var is false :(\n");
+
+}
+bool True() {return true;}
+bool False() {return false;}
+
+void main()
+{
+bool t = true;
+bool f = false;
+//simply true
+funBool(true);//(2)
+funBool(4<5); 
+funBool(4 == 4);
+funBool(True());
+funBool(t);
+
+//simply false
+funBool(false);//(7)
+funBool(5<4);
+funBool(4 != 4);
+funBool(False());
+funBool(f);
+
+// true and false == false
+funBool(true and false);//(12)
+funBool(4<5 and false);
+funBool(4 == 4 and false);
+funBool(True() and false);
+funBool(t and false);
+funBool(true and 4>5);//(17)
+funBool(4<5 and 4>5);
+funBool(4 == 4 and 4>5);
+funBool(True() and 4>5);
+funBool(t and 4>5);
+funBool(true and 4!=4);//(22)
+funBool(4<5 and 4!=4);
+funBool(4 == 4 and 4!=4);
+funBool(True() and 4!=4);
+funBool(t and 4!=4);
+funBool(true and False());//(27)
+funBool(4<5 and False());
+funBool(4 == 4 and False());
+funBool(True() and False());
+funBool(t and False());
+funBool(true and f);//(32)
+funBool(4<5 and f);
+funBool(4 == 4 and f);
+funBool(True() and f);
+funBool(t and f);
+
+// false or true == true
+funBool(false or true); //(37)
+funBool(4>5 or true);
+funBool(4!=4 or true);
+funBool(False() or true);
+funBool(f or true);
+funBool(false or 4<5); //(42)
+funBool(4>5 or 4<5);
+funBool(4!=4 or 4<5);
+funBool(False() or 4<5);
+funBool(f or 4<5);
+funBool(false or 4==4); //(47)
+funBool(4>5 or 4==4);
+funBool(4!=4 or 4==4);
+funBool(False() or 4==4);
+funBool(f or 4==4);
+funBool(false or True()); //(52)
+funBool(4>5 or True());
+funBool(4!=4 or True());
+funBool(False() or True());
+funBool(f or True());
+funBool(false or t); //(57)
+funBool(4>5 or t);
+funBool(4!=4 or t);
+funBool(False() or t);
+funBool(f or t);
+
+//true and true == true
+funBool(true and true);//(62)
+funBool(4<5 and true);
+funBool(4 == 4 and true);
+funBool(True() and true);
+funBool(t and true);
+funBool(true and 4<5);//(67)
+funBool(4<5 and 4<5);
+funBool(4 == 4 and 4<5);
+funBool(True() and 4<5);
+funBool(t and 4<5);
+funBool(true and 4==4);//(72)
+funBool(4<5 and 4==4);
+funBool(4 == 4 and 4==4);
+funBool(True() and 4==4);
+funBool(t and 4==4);
+funBool(true and True());//(77)
+funBool(4<5 and True());
+funBool(4 == 4 and True());
+funBool(True() and True());
+funBool(t and True());
+funBool(true and t);//(82)
+funBool(4<5 and t);
+funBool(4 == 4 and t);
+funBool(True() and t);
+funBool(t and t);
+
+//false or false == false
+funBool(false or false); //(87)
+funBool(4>5 or false);
+funBool(4!=4 or false);
+funBool(False() or false);
+funBool(f or false);
+funBool(false or 4>5); //(92)
+funBool(4>5 or 4>5);
+funBool(4!=4 or 4>5);
+funBool(False() or 4>5);
+funBool(f or 4>5);
+funBool(false or 4!=4); //(97)
+funBool(4>5 or 4!=4);
+funBool(4!=4 or 4!=4);
+funBool(False() or 4!=4);
+funBool(f or 4!=4);
+funBool(false or False()); //(102)
+funBool(4>5 or False());
+funBool(4!=4 or False());
+funBool(False() or False());
+funBool(f or False());
+funBool(false or f); //(107)
+funBool(4>5 or f);
+funBool(4!=4 or f);
+funBool(False() or f);
+funBool(f or f);
+
+funBool( 3*9-5 > 18/9 and  2*3 == 12/2); //true(112)
+funBool( 2*3 == 12/2 and 3*9-5 > 18/9);
+funBool( 3*9-5 < 18/9 or  2*3 != 12/2); //false
+funBool( 2*3 != 12/2 or 3*9-5 < 18/9);
+	
+//same routine, everything reversed with not
+	//simply true
+	funBool(not true);//(116)
+	funBool(not (4<5)); 
+	funBool(not (4 == 4));
+	funBool(not (True()));
+	funBool(not (t));
+
+	//simply false
+	funBool(not (false));//(121)
+	funBool(not (5<4));
+	funBool(not (4 != 4));
+	funBool(not (False()));
+	funBool(not (f));
+
+	// true and false == false
+	funBool(not (true and false));//(126)
+	funBool(not (4<5 and false));
+	funBool(not (4 == 4 and false));
+	funBool(not (True() and false));
+	funBool(not (t and false));
+	funBool(not (true and 4>5));//(131)
+	funBool(not (4<5 and 4>5));
+	funBool(not (4 == 4 and 4>5));
+	funBool(not (True() and 4>5));
+	funBool(not (t and 4>5));
+	funBool(not (true and 4!=4));//(136)
+	funBool(not (4<5 and 4!=4));
+	funBool(not (4 == 4 and 4!=4));
+	funBool(not (True() and 4!=4));
+	funBool(not (t and 4!=4));
+	funBool(not (true and False()));//(141)
+	funBool(not (4<5 and False()));
+	funBool(not (4 == 4 and False()));
+	funBool(not (True() and False()));
+	funBool(not (t and False()));
+	funBool(not (true and f));//(146)
+	funBool(not (4<5 and f));
+	funBool(not (4 == 4 and f));
+	funBool(not (True() and f));
+	funBool(not (t and f));
+
+	// false or true == true
+	funBool(not(false or true)); //(151)
+	funBool(not(4>5 or true));
+	funBool(not(4!=4 or true));
+	funBool(not(False() or true));
+	funBool(not(f or true));
+	funBool(not(false or 4<5)); //(156)
+	funBool(not(4>5 or 4<5));
+	funBool(not(4!=4 or 4<5));
+	funBool(not(False() or 4<5));
+	funBool(not(f or 4<5));
+	funBool(not(false or 4==4)); //(161)
+	funBool(not(4>5 or 4==4));
+	funBool(not(4!=4 or 4==4));
+	funBool(not(False() or 4==4));
+	funBool(not(f or 4==4));
+	funBool(not(false or True())); //(166)
+	funBool(not(4>5 or True()));
+	funBool(not(4!=4 or True()));
+	funBool(not(False() or True()));
+	funBool(not(f or True()));
+	funBool(not(false or t)); //(171)
+	funBool(not(4>5 or t));
+	funBool(not(4!=4 or t));
+	funBool(not(False() or t));
+	funBool(not(f or t));
+
+	//true and true == true
+	funBool(not(true and true));//(176)
+	funBool(not(4<5 and true));
+	funBool(not(4 == 4 and true));
+	funBool(not(True() and true));
+	funBool(not(t and true));
+	funBool(not(true and 4<5));//(181)
+	funBool(not(4<5 and 4<5));
+	funBool(not(4 == 4 and 4<5));
+	funBool(not(True() and 4<5));
+	funBool(not(t and 4<5));
+	funBool(not(true and 4==4));//(186)
+	funBool(not(4<5 and 4==4));
+	funBool(not(4 == 4 and 4==4));
+	funBool(not(True() and 4==4));
+	funBool(not(t and 4==4));
+	funBool(not(true and True()));//(191)
+	funBool(not(4<5 and True()));
+	funBool(not(4 == 4 and True()));
+	funBool(not(True() and True()));
+	funBool(not(t and True()));
+	funBool(not(true and t));//(196)
+	funBool(not(4<5 and t));
+	funBool(not(4 == 4 and t));
+	funBool(not(True() and t));
+	funBool(not(t and t));
+
+	//false or false == false
+	funBool(not(false or false)); //(201)
+	funBool(not(4>5 or false));
+	funBool(not(4!=4 or false));
+	funBool(not(False() or false));
+	funBool(not(f or false));
+	funBool(not(false or 4>5)); //(206)
+	funBool(not(4>5 or 4>5));
+	funBool(not(4!=4 or 4>5));
+	funBool(not(False() or 4>5));
+	funBool(not(f or 4>5));
+	funBool(not(false or 4!=4)); //(211)
+	funBool(not(4>5 or 4!=4));
+	funBool(not(4!=4 or 4!=4));
+	funBool(not(False() or 4!=4));
+	funBool(not(f or 4!=4));
+	funBool(not(false or False())); //(216)
+	funBool(not(4>5 or False()));
+	funBool(not(4!=4 or False()));
+	funBool(not(False() or False()));
+	funBool(not(f or False()));
+	funBool(not(false or f)); //(221)
+	funBool(not(4>5 or f));
+	funBool(not(4!=4 or f));
+	funBool(not(False() or f));
+	funBool(not(f or f));
+
+	funBool(not( 3*9-5 > 18/9 and  2*3 == 12/2)); //true(226)
+	funBool(not( 2*3 == 12/2 and 3*9-5 > 18/9));
+	funBool(not( 3*9-5 < 18/9 or  2*3 != 12/2)); //false
+	funBool(not( 2*3 != 12/2 or 3*9-5 < 18/9));
+}

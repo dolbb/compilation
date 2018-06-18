@@ -1,0 +1,4 @@
+void main()
+{
+    int bb = 5 / 0;
+}

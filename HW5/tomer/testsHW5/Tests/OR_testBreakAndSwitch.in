@@ -1,0 +1,36 @@
+//this test is to check the functionality of break as statement in switch
+
+void printNum(int num)
+{
+	printi(num);
+	print("\n");
+}
+
+void main ()
+{
+	print("test int:\n");
+	int x = 5;
+	while(true){
+		switch(x){
+		case 1: {printNum(1); x = x-1;break;} break;
+		case 2: {printNum(2); x = x-1;} break;
+		case 3: {printNum(3); x = x-1;} break;
+		case 4: {printNum(4); x = x-1;} break;
+		case 5: {printNum(5); x = x-1;} break;
+
+
+		
+		};
+	}
+	print("test byte:\n");
+	byte y = 5b;
+	while(true){
+		switch(y){
+		case 1b: {printNum(1); y = y - 1b;break;} break;
+		case 2b: {printNum(2); y = y - 1b;} break;
+		case 3b: {printNum(3); y = y - 1b;} break;
+		case 4b: {printNum(4); y = y - 1b;} break;
+		case 5b: {printNum(5); y = y - 1b;} break;
+		};
+	}
+}

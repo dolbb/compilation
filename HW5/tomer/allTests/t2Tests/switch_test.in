@@ -1,0 +1,40 @@
+void firstSwitch(int a)
+{
+	switch(a+1){
+	case 1:
+	{
+		printi(1);
+		print("\n");
+		return;
+	}break;
+	case 2:
+	{
+		printi(2);
+		print("\n");
+	}break;
+	case 3:
+	{
+		printi(3);
+		print("\n");
+		return;
+	}break;
+	case 4b:
+	{
+		printi(4);
+		print("\n");
+		return;
+	}break;
+	};
+print("End first switch\n");
+
+}
+
+void main()
+{
+	firstSwitch(0);
+	firstSwitch(1);
+	firstSwitch(2);
+	firstSwitch(3);
+	firstSwitch(4);
+}
+

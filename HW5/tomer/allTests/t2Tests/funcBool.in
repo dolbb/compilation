@@ -1,0 +1,15 @@
+bool f(){
+	return true;
+}
+
+void main(){
+	int x;
+
+	bool d=f();
+	if (d)
+	{
+		print("yes\n");
+	}
+	f();
+
+}

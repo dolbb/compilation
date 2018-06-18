@@ -1,0 +1,1028 @@
+%{
+	#include <cstdio>
+	#include <iostream>
+	#include <stdlib.h>
+	#include <string>
+	#include <utility>
+	#include <sstream>
+
+
+	#include "parser.hpp"
+	#include "helpers.hpp"
+	#include "output.hpp"
+	#include "registers.hpp"
+	#include "bp.hpp"
+	#include "stack.hpp"
+
+	extern char* yytext;
+	extern FILE* yyin;
+	extern int yylex();
+	extern int yylineno;
+	int yyerror(const char* message);
+
+	#define YYERROR_VERBOSE 1
+
+	using namespace std;
+	using namespace output;
+
+	SymbolTables symbol_tables = initialzeSymbolTables();
+
+	// return type of the current function. 
+	MyType current_return_type = VOID_TYPE;
+
+	// is program inside a while loop.
+	vector<bool> inside_while;
+	vector<int> while_offsets;
+
+	// for monitoring if/else/while/case with one command only
+	bool inside_if_else_while_case = false;
+
+	vector<vector<STYPE> > exp_global;
+	vector<STYPE> arg_global;
+
+	CodeBuffer& code_buffer = CodeBuffer::instance();
+	Registers& registers = Registers::instance();
+
+	int strings_count=1;
+
+%}
+
+%token VOID
+%token INT
+%token BYTE
+%token BOOL
+%token BREAK
+%token TRUE
+%token FALSE
+%token RETURN
+%token IF
+%token WHILE
+%token SWITCH
+%token CASE
+%token COLON
+%token SC
+%token COMMA
+%token LPAREN
+%nonassoc RPAREN
+%token LBRACE
+%token RBRACE
+%token ID
+%token NUM
+%token B
+%token STRING
+%right ASSIGN
+%left OR
+%left AND
+%left RELOP_EQ
+%left RELOP_COMP
+%left BINOP_ADD
+%left BINOP_MULT
+%right NOT
+%right ELSE
+
+
+
+%%
+
+Program : 	{
+				code_buffer.emitData("div_data: .asciiz \"Error division by zero\\n\"");
+				code_buffer.emit("div_text:");
+				// registers.storeRegistersOnStack();
+				Stack::push(); //room for (unused) old $fp
+				Stack::push(); //room for (unused) old $ra
+				code_buffer.emit("la $v1, div_data");
+				Stack::push();
+				code_buffer.emit("sw $v1, ($sp)");
+				code_buffer.emit("jal print_");
+				code_buffer.emit("li $v0 10");
+				code_buffer.emit("syscall");
+
+
+				code_buffer.emit("printi_:");
+				code_buffer.emit("lw $a0,0($sp)");
+				code_buffer.emit("li $v0,1");
+				code_buffer.emit("syscall");
+				Stack::pop(2);
+				code_buffer.emit("lw $fp, ($sp)");
+				Stack::pop(1);
+				// registers.restoreRegistersOnStack();
+				code_buffer.emit("jr $ra");
+
+				code_buffer.emit("print_:");
+				code_buffer.emit("lw $a0,0($sp)");
+				code_buffer.emit("li $v0,4");
+				code_buffer.emit("syscall");
+				Stack::pop(2);
+				code_buffer.emit("lw $fp, ($sp)");
+				Stack::pop(1);
+				// registers.restoreRegistersOnStack();
+				code_buffer.emit("jr $ra");
+
+				code_buffer.emit("main:");
+				// registers.storeRegistersOnStack();
+				Stack::push(); //room for (unused) old $fp
+				Stack::push(); //room for old $ra
+				code_buffer.emit("j main_");
+
+			}
+
+			Funcs 
+			{
+				if (!isFunctionInSymbolTables(symbol_tables, "main")) {
+					errorMainMissing();
+					exit(0);
+				} else if (getSymbolType(symbol_tables, "main") != VOID_TYPE) {
+					errorMainMissing();
+					exit(0);
+				} else if (!(getFunctionArgs(symbol_tables, "main").empty())) {
+					errorMainMissing();
+					exit(0);
+				}
+				// final action - remove global scope. Remember not to print "print\i"
+				takeOutLastTable(symbol_tables);
+				code_buffer.printDataBuffer();
+				code_buffer.printCodeBuffer();
+			}
+;
+
+Funcs 	: 
+		| FuncDecl Funcs
+;
+
+FuncDecl : 	Try RetType ID
+					 	{	
+						 	stringstream func_name_label;
+							func_name_label << $3.name << "_:";
+							code_buffer.emit(func_name_label.str());
+							
+					 	}
+						LPAREN Formals RPAREN
+						{
+							if (isSymbolInSymbolTables(symbol_tables, $3.name)) {
+								errorDef(yylineno, $3.name.c_str());
+								exit(0);
+							} else {
+								STYPE function = {$3.name, $2.type, $6.function_values, 0};
+								handleNewFunction(symbol_tables, function);
+								current_return_type = $2.type;
+							}
+
+							code_buffer.emit("move $fp, $sp");
+							stringstream store_ra;
+							store_ra << "sw $ra, " << $6.function_values.size()*4 << "($sp)";
+							code_buffer.emit(store_ra.str());
+						}
+						LBRACE Statements RBRACE
+							{
+								string end_label = code_buffer.next();
+								Stack::pop(getLastTableCountOfLocalVars(symbol_tables));
+								Stack::pop($6.function_values.size());
+								code_buffer.emit("lw $ra, ($sp)");
+								Stack::pop(1);
+								code_buffer.emit("lw $fp, ($sp)");
+								Stack::pop(1);
+								// registers.restoreRegistersOnStack();
+								code_buffer.emit("jr $ra");
+								takeOutLastTable(symbol_tables);
+								// TODO: change the following when dealing with functions.
+								code_buffer.bpatch($10.next_list, end_label);
+							}
+;
+
+Try : ;
+
+RetType : Type 	{$$.type = $1.type;}
+		| VOID 	{$$.type = VOID_TYPE;}
+;
+
+Formals : {}
+		| FormalsList
+			{
+				$$.function_values = arg_global;
+				arg_global.clear();
+			}
+;
+
+FormalsList : FormalDecl
+			{
+				arg_global.push_back($1);
+			}
+			| FormalDecl 
+				{
+					arg_global.push_back($1);
+				}
+				COMMA FormalsList
+;
+
+FormalDecl : Type ID
+				{
+					$$.type = $1.type;
+					$$.name = $2.name;
+				}
+;
+
+Statements 	: Statement 
+				{
+					$$.next_list = $1.next_list;
+					$$.break_list = $1.break_list;
+				}
+			| Statements M Statement
+				{
+					code_buffer.bpatch($1.next_list, $2.quad);
+					$$.next_list = $3.next_list;
+					$$.break_list = CodeBuffer::merge($1.break_list, $3.break_list);
+				}
+;
+
+Statement 	: LBRACE 
+				{
+					inside_if_else_while_case = false;
+					insertNewTableForScope(symbol_tables);
+				}
+				Statements RBRACE
+					{
+						string pop_code = code_buffer.next();
+						code_buffer.bpatch($3.next_list, pop_code);
+						Stack::pop(getLastTableCountOfLocalVars(symbol_tables));
+						takeOutLastTable(symbol_tables);
+						$$.next_list = CodeBuffer::makelist(code_buffer.emit("j "));
+
+
+						$$.break_list = $3.break_list;
+					}
+			| Type ID SC 	
+				{
+					if (isSymbolInSymbolTables(symbol_tables, $2.name)) {
+						errorDef(yylineno, $2.name.c_str());
+						exit(0);
+					} else {
+						// $$.type = $1.type;
+						if (inside_if_else_while_case) {
+							insertNewTableForScope(symbol_tables);
+						}
+						STYPE variable = {$2.name, $1.type};
+						insertNewValIntoTable(symbol_tables, variable);
+						if (inside_if_else_while_case) {
+							takeOutLastTable(symbol_tables);
+						}
+					}
+					if (!inside_if_else_while_case) {
+						Stack::push();
+					}
+					$$.next_list = CodeBuffer::makelist(code_buffer.emit("j "));
+
+				}
+			| Type ID ASSIGN Exp SC
+				{
+					if (isSymbolInSymbolTables(symbol_tables, $2.name)) {
+						errorDef(yylineno, $2.name.c_str());
+						exit(0);
+					} else if (($1.type != $4.type) && 
+							!(($4.type == BYTE_TYPE) && ($1.type == INT_TYPE))) {
+
+						errorMismatch(yylineno);
+						exit(0);
+					} else {
+						// $$.type = $1.type;
+						if (inside_if_else_while_case) {
+							insertNewTableForScope(symbol_tables);
+						}
+						STYPE variable = {$2.name, $1.type};
+						insertNewValIntoTable(symbol_tables, variable);
+						if ($4.type == BOOL_TYPE) {
+							$4.reg = registers.getReg();
+							string true_label = code_buffer.next();
+							stringstream true_code;
+							true_code << "li " << $4.reg << ", 1";
+							code_buffer.emit(true_code.str());
+							code_buffer.bpatch($4.true_list, true_label);
+							vector<int> temp_next = CodeBuffer::makelist(code_buffer.emit("j "));
+
+							string false_label = code_buffer.next();
+							stringstream false_code;
+							false_code << "li " << $4.reg << ", 0";
+							code_buffer.emit(false_code.str());
+							code_buffer.bpatch($4.false_list, false_label);
+							string store_release = code_buffer.next();
+							code_buffer.bpatch(temp_next, store_release);
+
+						}
+						Stack::push();
+						Stack::store($2.name, symbol_tables, $4.reg);
+						registers.releaseReg($4.reg);
+
+						if (inside_if_else_while_case) {
+							takeOutLastTable(symbol_tables);
+							Stack::pop(1);
+						}
+					}
+					$$.next_list = CodeBuffer::makelist(code_buffer.emit("j "));
+
+				}
+			| ID ASSIGN Exp SC
+				{
+					if (!isSymbolInSymbolTables(symbol_tables, $1.name)) {
+						errorUndef(yylineno, $1.name.c_str());
+						exit(0);
+					} else if ((getSymbolType(symbol_tables, $1.name) != $3.type) && 
+							!(($3.type == BYTE_TYPE) && (getSymbolType(symbol_tables, $1.name) == INT_TYPE))) 
+					{
+						errorMismatch(yylineno);
+						exit(0);
+					}
+					if ($3.type == BOOL_TYPE) {
+						$3.reg = registers.getReg();
+						string true_label = code_buffer.next();
+						stringstream true_code;
+						true_code << "li " << $3.reg << ", 1";
+						code_buffer.emit(true_code.str());
+						code_buffer.bpatch($3.true_list, true_label);
+
+						vector<int> temp_next = CodeBuffer::makelist(code_buffer.emit("j "));
+
+						string false_label = code_buffer.next();
+						stringstream false_code;
+						false_code << "li " << $3.reg << ", 0";
+						code_buffer.emit(false_code.str());
+						code_buffer.bpatch($3.false_list, false_label);
+						string store_release = code_buffer.next();
+						code_buffer.bpatch(temp_next, store_release);
+					}
+					Stack::store($1.name, symbol_tables, $3.reg);
+					registers.releaseReg($3.reg);
+
+					$$.next_list = CodeBuffer::makelist(code_buffer.emit("j "));
+
+				}
+			| Call SC 
+					{
+						$$.next_list = CodeBuffer::makelist(code_buffer.emit("j "));
+
+					}
+			| RETURN SC
+				{
+					if (current_return_type != VOID_TYPE) {
+						errorMismatch(yylineno);
+						exit(0);
+					}
+					Stack::pop(getCountOfLocalVarsUntilFunction(symbol_tables));
+					Stack::pop(getNumberOfArgumentsOfLastFunction());
+					code_buffer.emit("lw $ra, ($sp)");
+					Stack::pop(1);
+					code_buffer.emit("lw $fp, ($sp)");
+					Stack::pop(1);
+					// registers.restoreRegistersOnStack();
+					code_buffer.emit("jr $ra");
+				}
+			| RETURN Exp SC
+				{
+					if (current_return_type != $2.type || current_return_type == VOID_TYPE) {
+						if ((current_return_type != INT_TYPE) || ($2.type != BYTE_TYPE)) {
+							errorMismatch(yylineno);
+							exit(0);
+						}
+					}
+
+					if ($2.type != BOOL_TYPE){
+						stringstream ret_val;
+						ret_val << "move $v1, " << $2.reg;
+						code_buffer.emit(ret_val.str());
+						registers.releaseReg($2.reg);
+					}
+					else {
+							string true_label = code_buffer.next();
+							stringstream true_code;
+							true_code << "li $v1, 1";
+							code_buffer.emit(true_code.str());
+							code_buffer.bpatch($2.true_list, true_label);
+							vector<int> temp_next = CodeBuffer::makelist(code_buffer.emit("j "));
+							string false_label = code_buffer.next();
+							stringstream false_code;
+							false_code << "li $v1, 0";
+							code_buffer.emit(false_code.str());
+							code_buffer.bpatch($2.false_list, false_label);
+							string continue_ret = code_buffer.next();
+							code_buffer.bpatch(temp_next, continue_ret);
+					}
+					Stack::pop(getCountOfLocalVarsUntilFunction(symbol_tables));
+					Stack::pop(getNumberOfArgumentsOfLastFunction());
+					code_buffer.emit("lw $ra, ($sp)");
+					Stack::pop(1);
+					code_buffer.emit("lw $fp, ($sp)");
+					Stack::pop(1);
+					// registers.restoreRegistersOnStack();
+					code_buffer.emit("jr $ra");
+
+				}
+			| IF LPAREN BoolExpIf RPAREN M Statement
+				{
+					inside_if_else_while_case = false;
+
+					code_buffer.bpatch($3.true_list, $5.quad);
+					$$.next_list = CodeBuffer::merge($3.false_list, $6.next_list);
+					$$.break_list = $6.break_list;
+				}
+			| IF LPAREN BoolExpIf RPAREN M Statement ELSE N
+				{
+					inside_if_else_while_case = true;
+
+				}
+				M Statement
+					{
+						inside_if_else_while_case = false;
+
+						code_buffer.bpatch($3.true_list, $5.quad);
+						code_buffer.bpatch($3.false_list, $10.quad);
+						$$.next_list = CodeBuffer::merge(CodeBuffer::merge($6.next_list, $8.next_list), $11.next_list);
+						$$.break_list = CodeBuffer::merge($6.break_list, $11.break_list);
+
+					}
+			| WHILE M LPAREN Exp RPAREN 
+				{
+					if ($4.type != BOOL_TYPE) {
+						errorMismatch(yylineno);
+						exit(0);
+					} else {
+						inside_if_else_while_case = true;
+						inside_while.push_back(true);
+					}
+
+					while_offsets.push_back(getTop(symbol_tables));
+				}
+				M Statement
+					{
+						inside_if_else_while_case = false;
+						inside_while.pop_back();
+
+
+						code_buffer.bpatch($8.next_list,$2.quad);
+						code_buffer.bpatch($4.true_list,$7.quad);
+						$$.next_list = CodeBuffer::merge($4.false_list, $8.break_list);
+
+						stringstream sm_code;
+						sm_code << "j " << $2.quad;
+						code_buffer.emit(sm_code.str());
+						while_offsets.pop_back();
+						$$.break_list.clear();
+					}
+			| BREAK SC
+				{
+					if (inside_while.empty()) {
+						errorUnexpectedBreak(yylineno);
+						exit(0);
+					}
+
+					Stack::pop(getTop(symbol_tables)-while_offsets.back());
+					$$.break_list = CodeBuffer::makelist(code_buffer.emit("j "));
+				}
+			| SWITCH LPAREN Exp N RPAREN 
+				{
+					if (($3.type != INT_TYPE) && ($3.type != BYTE_TYPE)) {
+						errorMismatch(yylineno);
+						exit(0);
+					}
+				}
+				LBRACE CaseList RBRACE SC
+					{
+						string init_label = code_buffer.next();
+						code_buffer.bpatch($4.next_list, init_label);
+						while (!$8.value_list.empty()) {
+							string value = $8.value_list.back();
+							// int decimal_value = atoi($8.value_list.back().c_str());
+							// stringstream hex_val;
+    						// hex_val << hex << decimal_value;
+							string quad = $8.quad_list.back();
+							stringstream if_code;
+							if_code << "beq " << $3.reg << ", " << value << ", " << quad;
+							code_buffer.emit(if_code.str());
+							$8.value_list.pop_back();
+							$8.quad_list.pop_back();
+						}
+
+						$$.next_list = CodeBuffer::merge($8.next_list, CodeBuffer::makelist(code_buffer.emit("j ")));
+
+						$$.break_list = $8.break_list;
+					}
+;
+
+BoolExpIf	: Exp 
+				{
+					if ($1.type != BOOL_TYPE) {
+						errorMismatch(yylineno);
+						exit(0);
+					} else {
+						inside_if_else_while_case = true;
+					}
+
+					$$.true_list = $1.true_list;
+					$$.false_list = $1.false_list;
+				}
+				
+;
+
+CaseList 	: CaseStat CaseList
+				{
+					$$.quad_list = $2.quad_list;
+					$$.quad_list.push_back($1.quad);
+					$$.value_list = $2.value_list;
+					$$.value_list.push_back($1.value);
+					$$.next_list = CodeBuffer::merge($2.next_list, $1.next_list);
+					$$.break_list = CodeBuffer::merge($2.break_list, $1.break_list);
+				}
+			| CaseStat
+				{
+					$$.quad_list.clear();
+					$$.quad_list.push_back($1.quad);
+					$$.value_list.clear();
+					$$.value_list.push_back($1.value);
+					$$.next_list = $1.next_list;
+					$$.break_list = $1.break_list;
+				}
+;
+
+CaseStat 	: CASE NUM COLON 
+				{
+					inside_if_else_while_case = true;
+				}
+				M Statement 
+					{
+						inside_if_else_while_case = false;
+					}
+					BREAK SC
+						{
+							$$.quad = $5.quad;
+							$$.value = $2.value;
+							$$.next_list = $6.next_list;
+							$$.break_list = $6.break_list;
+						}
+			| CASE NUM B 
+				{
+					int value = atoi($2.value.c_str());
+					if (value > 255) {
+						errorByteTooLarge(yylineno, $2.value.c_str());
+						exit(0);
+					}
+					inside_if_else_while_case = true;
+				}
+				COLON M Statement 
+					{
+						inside_if_else_while_case = false;
+					}
+					BREAK SC
+						{
+							$$.quad = $6.quad;
+							$$.value = $2.value;
+							$$.next_list = $7.next_list;
+							$$.break_list = $7.break_list;
+						}
+;
+
+Call 	: ID LPAREN 
+				{
+					$$.start_exp = code_buffer.next();
+					exp_global.push_back(vector<STYPE>());
+					registers.storeRegistersOnStack();
+					Stack::storeFP();
+					Stack::push(); //make room for old $ra
+				}
+				ExpList RPAREN
+				{
+					if (isFunctionInSymbolTables(symbol_tables, $1.name)) {
+						$$.type = getSymbolType(symbol_tables, $1.name);
+						vector<STYPE> args = getFunctionArgs(symbol_tables, $1.name);
+						
+						if (args.size() != exp_global.back().size()) {
+							std::vector<const char*> argTypes;
+							for (int i=0 ; i<args.size() ; i++){
+								argTypes.push_back(getStringFromMyType(args[i].type));
+							}
+							errorPrototypeMismatch(yylineno, $1.name.c_str(), argTypes);
+							exit(0);
+						} else {
+							for (int i=0; i<args.size(); i++) {
+								if (args[i].type != exp_global.back()[i].type) {
+									if (!((args[i].type == INT_TYPE) && (exp_global.back()[i].type == BYTE_TYPE))) {
+										std::vector<const char*> argTypes;
+										for (int j=0 ; j<args.size() ; j++){
+											argTypes.push_back(getStringFromMyType(args[j].type));
+										}
+										errorPrototypeMismatch(yylineno, $1.name.c_str(), argTypes);
+										exit(0);
+									}
+								}
+							}
+						}
+					} else {
+						errorUndefFunc(yylineno, $1.name.c_str());
+						exit(0);
+					}
+
+					$$.after_exp = CodeBuffer::makelist(code_buffer.emit("j "));
+
+					for (int i = 0; i < exp_global.back().size(); i++){
+						if (exp_global.back()[i].type == BOOL_TYPE){
+							exp_global.back()[i].reg = registers.getReg();
+							string true_label = code_buffer.next();
+							stringstream true_code;
+							true_code << "li " << exp_global.back()[i].reg << ", 1";
+							code_buffer.emit(true_code.str());
+							if (i < exp_global.back().size()-1){
+								stringstream next_exp_code;
+								next_exp_code << "j " << exp_global.back()[i+1].start_exp;
+								code_buffer.emit(next_exp_code.str());
+							} 
+							else {
+								$$.after_exp = CodeBuffer::merge($$.after_exp,CodeBuffer::makelist(code_buffer.emit("j ")));
+							}
+							code_buffer.bpatch(exp_global.back()[i].true_list, true_label);
+
+							string false_label = code_buffer.next();
+							stringstream false_code;
+							false_code << "li " << exp_global.back()[i].reg << ", 0";
+							code_buffer.emit(false_code.str());
+							if (i < exp_global.back().size()-1){
+								stringstream next_exp_code;
+								next_exp_code << "j " << exp_global.back()[i+1].start_exp;
+								code_buffer.emit(next_exp_code.str());
+							}
+							else {
+								$$.after_exp = CodeBuffer::merge($$.after_exp,CodeBuffer::makelist(code_buffer.emit("j ")));
+							}
+							code_buffer.bpatch(exp_global.back()[i].false_list, false_label);
+						}
+					}
+					code_buffer.bpatch($$.after_exp,code_buffer.next());
+					for (int i=exp_global.back().size()-1; i>=0; i--){
+						Stack::storeRegister(exp_global.back()[i].reg);
+						registers.releaseReg(exp_global.back()[i].reg);
+					}
+					exp_global.pop_back();
+					stringstream store_code;
+					store_code << "jal " << $1.name <<"_";
+					code_buffer.emit(store_code.str());
+					registers.restoreRegistersOnStack();
+
+					$$.type = getFunctionRetType($1.name);
+				}
+
+		| ID LPAREN RPAREN
+			{
+				$$.start_exp = code_buffer.next();
+				if (isFunctionInSymbolTables(symbol_tables, $1.name)) {
+					$$.type = getSymbolType(symbol_tables, $1.name);
+					vector<STYPE> args = getFunctionArgs(symbol_tables, $1.name);
+					if (!args.empty()) {
+						std::vector<const char*> argTypes;
+						for (int i=0 ; i<args.size() ; i++){
+							argTypes.push_back(getStringFromMyType(args[i].type));
+						}
+						errorPrototypeMismatch(yylineno, $1.name.c_str(), argTypes);
+						exit(0);
+					}
+				} else {
+					errorUndefFunc(yylineno, $1.name.c_str());
+					exit(0);
+				}
+				registers.storeRegistersOnStack();
+				Stack::storeFP();
+				Stack::push(); //make room for old $ra
+				stringstream store_code;
+				store_code << "jal " << $1.name << "_";
+				code_buffer.emit(store_code.str());
+				registers.restoreRegistersOnStack();
+
+				$$.type = getFunctionRetType($1.name);
+
+			}
+			
+
+;
+
+ExpList : Exp
+			{
+				exp_global.back().push_back($1);
+			}
+		| Exp 
+			{
+				exp_global.back().push_back($1);
+			}
+			COMMA ExpList
+;
+
+Type 	: INT 	{$$.type = INT_TYPE;}
+		| BYTE 	{$$.type = BYTE_TYPE;}
+		| BOOL 	{$$.type = BOOL_TYPE;}
+
+;
+
+Exp : LPAREN Exp RPAREN 
+		{ 
+			$$.type = $2.type;
+
+
+			$$.reg = $2.reg;
+			$$.true_list = $2.true_list;
+			$$.false_list = $2.false_list;
+			$$.start_exp = $2.start_exp;
+		}
+		| Exp BINOP_MULT Exp
+		{
+			if ((($1.type != INT_TYPE) && ($1.type != BYTE_TYPE)) 
+				|| (($3.type != INT_TYPE) && ($3.type != BYTE_TYPE))) {
+					errorMismatch(yylineno);
+					exit(0);
+			} else {
+				if (($1.type == INT_TYPE) || ($3.type == INT_TYPE)) {
+					$$.type = INT_TYPE;
+				} else {
+					$$.type = BYTE_TYPE;
+				}
+			}
+			$$.start_exp = code_buffer.next();
+			stringstream sm_code;
+			if ($2.value == "*") {
+				sm_code << "mul " << $1.reg << ", " << $1.reg << ", " << $3.reg;
+			}
+			else {
+				stringstream zero_division;
+				zero_division << "beq " << $3.reg << ", 0, div_text";
+				code_buffer.emit(zero_division.str());
+				sm_code << "div " << $1.reg << ", " << $1.reg << ", " << $3.reg;
+			}
+			if ($$.type == BYTE_TYPE){
+				code_buffer.emit(sm_code.str());
+				sm_code.str("");
+				sm_code << "and " << $1.reg << ", " << $1.reg << ", 255";
+				code_buffer.emit(sm_code.str());
+			}
+			else{
+				code_buffer.emit(sm_code.str());
+			}
+			registers.releaseReg($3.reg);
+			$$.reg = $1.reg;
+		}
+	| Exp BINOP_ADD Exp
+		{
+			if ((($1.type != INT_TYPE) && ($1.type != BYTE_TYPE)) 
+				|| (($3.type != INT_TYPE) && ($3.type != BYTE_TYPE))) {
+					errorMismatch(yylineno);
+					exit(0);
+			} else {
+				if (($1.type == INT_TYPE) || ($3.type == INT_TYPE)) {
+
+					$$.type = INT_TYPE;
+				} else {
+					$$.type = BYTE_TYPE;
+				}
+			}
+
+			$$.start_exp = code_buffer.next();
+			stringstream sm_code;
+			if ($2.value == "+") {
+				sm_code << "add " << $1.reg << ", " << $1.reg << ", " << $3.reg;
+			}
+			else {
+				sm_code << "sub " << $1.reg << ", " << $1.reg << ", " << $3.reg;
+			}
+			if ($$.type == BYTE_TYPE){
+				code_buffer.emit(sm_code.str());
+				sm_code.str("");
+				sm_code << "and " << $1.reg << ", " << $1.reg << ", 255";
+				code_buffer.emit(sm_code.str());
+
+			}
+			else{
+				code_buffer.emit(sm_code.str());
+			}
+			registers.releaseReg($3.reg);
+			$$.reg = $1.reg;
+		}		
+	| ID 
+		{
+			if (!isSymbolInSymbolTables(symbol_tables, $1.name)) {
+				errorUndef(yylineno, $1.name.c_str());
+				exit(0);
+			} else {
+				$$.type = getSymbolType(symbol_tables, $1.name);
+			}
+
+			$$.start_exp = code_buffer.next();
+			string temp_reg = registers.getReg();
+			Stack::load($1.name, symbol_tables, temp_reg);
+			if ($$.type == BOOL_TYPE){
+				stringstream sm_code;
+				sm_code << "beq " << temp_reg << ", 1, ";
+				$$.true_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+				sm_code.str("j ");
+				$$.false_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+				registers.releaseReg(temp_reg);
+			} else {
+				$$.reg = temp_reg;
+			}
+
+		}
+	| Call 	{
+				$$.start_exp = $1.start_exp;
+				$$.type = $1.type;
+				$$.reg = registers.getReg();
+				stringstream load_code;
+				load_code << "move " << $$.reg << ", $v1";
+				code_buffer.emit(load_code.str());
+				if ($1.type == BOOL_TYPE){
+					stringstream sm_code;
+					sm_code << "beq " << $$.reg << ", 1, ";
+					$$.true_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+					sm_code.str("j ");
+					$$.false_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+					registers.releaseReg($$.reg);
+				}
+			}
+	| NUM
+		{
+			$$.type = INT_TYPE;
+
+			$$.start_exp = code_buffer.next();
+			$$.reg = registers.getReg();
+			stringstream sm_code;
+			sm_code << "li " << $$.reg << ", " << $1.value;
+			code_buffer.emit(sm_code.str());
+		}	
+	| NUM B 	
+		{
+			int value = atoi($1.value.c_str());
+			if (value > 255) {
+				errorByteTooLarge(yylineno, $1.value.c_str());
+				exit(0);
+			}
+			$$.type = BYTE_TYPE;
+
+			$$.start_exp = code_buffer.next();
+			$$.reg = registers.getReg();
+			stringstream sm_code;
+			sm_code << "li " << $$.reg << ", " << $1.value;
+			code_buffer.emit(sm_code.str());
+		}
+	| STRING	
+		{
+			$$.type = STRING_TYPE;
+			$$.reg = registers.getReg();
+			stringstream data_code;
+			data_code << "labal_data_" << strings_count;
+			$$.start_exp = code_buffer.next();
+			stringstream sm_code;
+			sm_code << "la " << $$.reg << ", " << data_code.str();
+			code_buffer.emit(sm_code.str());
+			data_code <<": .asciiz " <<$1.value;
+			code_buffer.emitData(data_code.str());
+			strings_count++;
+		}
+	| TRUE	
+		{
+			$$.start_exp = code_buffer.next();
+			$$.type = BOOL_TYPE;
+			stringstream sm_code;
+			sm_code.str("j ");
+			$$.true_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+
+		}
+	| FALSE	
+		{
+			$$.start_exp = code_buffer.next();
+			$$.type = BOOL_TYPE;
+
+			stringstream sm_code;
+			sm_code.str("j ");
+			$$.false_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+
+		}
+	| NOT Exp
+		{
+			if ($2.type != BOOL_TYPE) {
+				errorMismatch(yylineno);
+				exit(0);
+			} else {
+				$$.type = BOOL_TYPE;
+			}
+
+			$$.false_list = $2.true_list;
+			$$.true_list = $2.false_list;
+			$$.start_exp = $2.start_exp;
+
+		}
+	| Exp AND M Exp
+		{
+			if (($1.type != BOOL_TYPE) or ($4.type != BOOL_TYPE)) {
+				errorMismatch(yylineno);
+				exit(0);
+			} else {
+				$$.type = BOOL_TYPE;
+			}
+
+			$$.false_list = CodeBuffer::merge($1.false_list,$4.false_list);
+			code_buffer.bpatch($1.true_list, $3.quad);
+			$$.true_list = $4.true_list;
+			$$.start_exp = $1.start_exp;
+
+
+		}
+	| Exp OR M Exp
+		{
+			if (($1.type != BOOL_TYPE) or ($4.type != BOOL_TYPE)) {
+				errorMismatch(yylineno);
+				exit(0);
+			} else {
+				$$.type = BOOL_TYPE;
+			}
+
+			$$.true_list = CodeBuffer::merge($1.true_list,$4.true_list);
+			code_buffer.bpatch($$.false_list, $3.quad);
+			$$.false_list = $4.false_list;
+			$$.start_exp = $1.start_exp;
+		}
+	| Exp RELOP_COMP Exp
+		{
+			if ((($1.type != INT_TYPE) && ($1.type != BYTE_TYPE)) 
+				|| (($3.type != INT_TYPE) && ($3.type != BYTE_TYPE))) {
+				errorMismatch(yylineno);
+				exit(0);
+			} else {
+				$$.type = BOOL_TYPE;
+			}
+
+			$$.start_exp = code_buffer.next();
+			stringstream sm_code;
+			if ($2.value == "<="){
+				sm_code << "ble " << $1.reg << ", " << $3.reg << ", ";
+			}
+			else if ($2.value == "<"){
+				sm_code << "blt " << $1.reg << ", " << $3.reg << ", ";
+			}
+			else if ($2.value == ">="){
+				sm_code << "bge " << $1.reg << ", " << $3.reg << ", ";
+			}
+			else {
+				sm_code << "bgt " << $1.reg << ", " << $3.reg << ", ";
+			}			
+			$$.true_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+			sm_code.str("j ");
+			$$.false_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+			registers.releaseReg($1.reg);
+			registers.releaseReg($3.reg);
+
+		}
+	| Exp RELOP_EQ Exp
+		{
+			if ((($1.type != INT_TYPE) && ($1.type != BYTE_TYPE)) 
+				|| (($3.type != INT_TYPE) && ($3.type != BYTE_TYPE))) {
+				errorMismatch(yylineno);
+				exit(0);
+			} else {
+				$$.type = BOOL_TYPE;
+			}
+
+			$$.start_exp = code_buffer.next();
+			stringstream sm_code;
+			if ($2.value == "=="){
+				sm_code << "beq " << $1.reg << ", " << $3.reg << ", ";
+			}
+			else{
+				sm_code << "bne " << $1.reg << ", " << $3.reg << ", ";
+			}
+			$$.true_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+			sm_code.str("j ");
+			$$.false_list = CodeBuffer::makelist(code_buffer.emit(sm_code.str()));
+			registers.releaseReg($1.reg);
+			registers.releaseReg($3.reg);
+		}
+
+;
+
+M : {
+		$$.quad = code_buffer.next();
+	}
+;
+
+N : {
+
+		$$.next_list = CodeBuffer::makelist(code_buffer.emit("j "));
+
+	}
+;
+
+
+%%
+
+int main(int argc, const char* argv[])
+{
+	yyin = fopen(argv[1], "r");
+	int res = yyparse();
+	fclose(yyin);
+	return res;
+}
+
+int yyerror(const char* message)
+{
+	errorSyn(yylineno);
+	// cout<<"Parse error: "<<message<< " in line " << yylineno << endl;
+	exit(0);
+}

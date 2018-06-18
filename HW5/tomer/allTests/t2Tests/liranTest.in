@@ -1,0 +1,41 @@
+int g(){
+	return 3;
+}
+// int f(){
+// 	while(true or 0<g()){
+// 		print("WHAT\n");
+// 			while (5==5){
+// 		return 2;
+// 	}
+// 		break;
+// 	}
+// 	return 5;
+// }
+
+int f(){
+	while(true or (f()>5)){
+	while (5==5){
+		printi(1);
+		return 2;
+	}
+	printi(2);
+	break;
+	}
+	return 5;
+}
+
+void main(){
+	// bool n= f() > 2;
+	int c=5;
+	f();
+
+	// if((3+5+6)>n){
+	// 	while(c<n){
+	// 		c = c+2;
+	// 		printi(f());
+	// 	}
+	// }
+	// else {
+	// 	print("adf");
+	// }
+}

@@ -1,0 +1,8 @@
+void main()
+{
+	int a=1;
+	while(true)
+		break;
+	
+	printi(a);
+}

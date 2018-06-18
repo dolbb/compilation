@@ -1,0 +1,21 @@
+// check break empties stack
+void f(){
+	byte c=0b;
+	while(c<3b){
+		int g1;
+		byte g2=4b;
+		while(true){
+			bool g3;
+			break;
+			byte g4;
+			byte g5;
+		}
+		printi(g2);
+		c=c+1b;
+		
+	}
+	
+}
+void main(){
+	f();
+}

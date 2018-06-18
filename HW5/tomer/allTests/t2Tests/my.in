@@ -1,0 +1,79 @@
+
+// int g(int x, int x2, int x3){
+// 	int y;
+// 	return 3;
+// }
+// void f(int a1, int b1, int c1){
+// 	int h;
+// 	int k;
+// 	{
+// 		int g;
+// 		return;
+// 		int j;
+// 	}
+// 	return;
+// 	// return;
+// }
+// void g2(int x, int y){
+// 	int r=1;
+// 	int z=x-y-r;
+// }
+
+// int g(int x){
+// 	int y=x+4;
+// 	return y;
+
+// to check
+
+// 3 < f() , f() < g() , f()<g()
+
+bool printfoo() {
+printi(1);
+return true;
+}
+
+// int fib(int x){
+// 	if (x == 0)
+// 	{
+// 		return 0;
+// 	}
+// 	if (x==1)
+// 	{
+// 		return 1;
+// 	}
+// 	return fib(x-1)+fib(x-2);
+// }
+void main(){
+
+
+	// print("you wowo amazing\n");
+	// printi(fib(20));
+	// print("\ncool:\n");
+	bool k=true or printfoo();
+	// printi(g(g(3)));
+	// int x=((1+2)+3)+4;
+	// g(3);
+	// g2(10,6);
+	// f(1,2,3);
+	// f(1,2,3);
+	// int x=g(1,2,3);
+	// byte x=4b;
+	// int y=6;
+	// {
+
+	// 	y = x + y;
+	// 	int z = x * y + x;
+	// 	int e =y-y+1;
+	// 	{
+	// 		int g = z/e;
+	// 	}
+		
+	// 	int f;
+	// }
+
+	
+
+	// check when clear (after main)
+}
+
+// f(f(3)), f(g(3))

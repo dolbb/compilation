@@ -1,0 +1,8 @@
+void main(){
+	bool g=false;
+	if(g)
+	print("LIRAN\n");
+	else 
+	print("EYLON\n");
+
+}

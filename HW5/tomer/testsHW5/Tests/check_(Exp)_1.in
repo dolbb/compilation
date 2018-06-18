@@ -1,0 +1,13 @@
+bool f()
+{
+	return true;
+}
+
+void main(){
+	bool a = f();
+	if(a){
+		int c = 5;
+		print("ok");
+	}
+}
+

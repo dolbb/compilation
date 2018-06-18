@@ -1,0 +1,66 @@
+void printCouple(int k,int j)
+{
+	print("(");
+	printi(k);
+	print(",");
+	printi(j);
+	print(")\n");
+}
+
+
+void dSwitch(int k,int j)
+{
+	switch(k*2)
+	{
+		case 2:
+		{
+			switch(j)
+			{
+				case 1:
+					printCouple(1,1);
+				break;
+				case 2:
+					printCouple(1,2);
+				break;
+				case 3:
+					printCouple(1,3);
+				break;
+			};
+			return;
+		}break;
+		
+		case 4:
+		{
+			switch(j)
+			{
+				case 1:
+					printCouple(2,1);
+				break;
+				case 2:
+					printCouple(2,2);
+				break;
+				case 3:
+					printCouple(2,3);
+				break;
+			};
+		}break;
+		
+	};
+	
+	print("End of switch\n");
+
+}
+
+void main()
+{
+	dSwitch(1,1);
+	dSwitch(1,2);
+	dSwitch(1,3);
+	dSwitch(1,4);
+	
+	dSwitch(1+1,1);
+	dSwitch(1+1,2);
+	dSwitch(1+1,3);
+	dSwitch(1+1,4);
+	
+}

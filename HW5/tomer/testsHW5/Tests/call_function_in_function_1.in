@@ -1,0 +1,39 @@
+int func3(int a){
+	if(a > 3){
+		print("a>3\n");
+		return 32;
+	}
+	else{
+		print("correct_3\n");
+		return 22;
+	}
+}
+
+int func2(int a){
+	if(a> 4){
+		print("a>4\n");
+		return 13;
+	}
+	else{
+		print("correct_2\n");
+		return 12;
+	}
+}
+
+
+int func1(int a){
+	if(a> 15){
+		print("a>5\n");
+		return 3;
+	}
+	else{
+		print("correct_1\n");
+		return 2*a;
+	}
+}
+
+void main(){
+
+	printi(func1(func2(func3(4))));
+	print("\n");
+}
