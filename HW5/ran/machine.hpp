@@ -8,14 +8,16 @@
 #include <iostream>
 #include <sstream>
 #include "bp.hpp"
+#include "commonHeader.hpp"
 using namespace std;
 
 #define BP (CodeBuffer::instance())
 #define FIRST_REGISTER (25)
 #define LAST_REGISTER (8)
-#define $RA "$ra"
+#define RA "$ra"
 #define $SP "$sp"
 #define $SP_ADDRSS "($sp)"
+#define $FP_ADDRSS "($fp)"
 #define DEBUG
 
 int currentReg = FIRST_REGISTER;
@@ -118,6 +120,39 @@ public:
 		handleByte(regLeftRes, isB);
 	}
 	
+	
+	
+	
+};
+
+class AssemblyStack {
+	RegisterManager mgr;
+	int getFPOffset(string symbol, SymbolsTable symTable) {
+		int fpOffset = symTable.getSymbolOffset(symbol);
+		return (fpOffset + 1) * (-4);
+	}
+	
+public:
+	void push(){
+		BP.emit("subu $sp, $sp, 4 #push stack");
+	}
+	void pop(int size) {
+		BP.emit("addu $sp, $sp, " + toString(4*size) + " #popping " + toString(size) +" items");
+	}
+	//should be used when declaring a new var
+	void addNewVar(string symbol, string reg, SymbolsTable symTable){
+		BP.emit("#---------saving new variable " + symbol + "------------");
+		push();
+		int fpOffset = getFPOffset(symbol, symTable);
+		mgr.storeFromReg(reg, toString(fpOffset) + "($fp)");
+		BP.emit("#---------finished saving new variable -----------");
+	}
+	void updateVar(string symbol, string reg, SymbolsTable symTable){
+		BP.emit("#---------updating variable " + symbol + "------------");
+		int fpOffset = getFPOffset(symbol, symTable);
+		mgr.storeFromReg(reg, toString(fpOffset) + "($fp)");
+		BP.emit("#---------finished updating variable -----------");
+	}
 	
 	
 	
