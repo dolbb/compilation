@@ -1,4 +1,0 @@
-void main(){
-	string a = "b";
-	print(a);
-}

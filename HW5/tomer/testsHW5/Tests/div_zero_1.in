@@ -1,5 +1,0 @@
-void main()
-{
-	int avi = 0;
-    int bb = 5 / avi;
-}

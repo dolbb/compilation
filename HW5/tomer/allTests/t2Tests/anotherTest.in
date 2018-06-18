@@ -1,8 +1,0 @@
-void main(){
-	int x=3;
-	bool y = false or x<3;
-	if(y)
-	print("a\n");
-	else
-	print("b\n");
-}
