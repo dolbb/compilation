@@ -14,30 +14,69 @@ AssemblyCommands asem;
 SymbolsTable symbolsTable;
 AssemblyStack asmStack;
 
+
+void updateArrEntry(){
+	
+	string reg1 = mgr.getReg();
+	std::cout << "reg1 is " << reg1 << std::endl;
+	mgr.storeToRegImm(reg1, 0);
+	
+	symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 2) );
+	symbolsTable.addSymbol("y", TypeInfo(DATA_INT, 3) );
+	string reg2 = mgr.getReg();
+	std::cout << "reg2 is " << reg2 << std::endl;
+	mgr.storeToRegImm(reg2, 9);
+	
+	asmStack.addNewVar("x",symbolsTable);
+	asmStack.addNewVar("y",symbolsTable);
+	asmStack.updateArrEntry("y",symbolsTable,reg1,reg2);
+}
+
+
 int main(){
-		
 	symbolsTable.addScope();
 	
-	symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 1) );
-	string reg1 = mgr.getRegAndPromote();
+	updateArrEntry();
+	//symbolsTable.addScope();
 	
-	symbolsTable.addSymbol("y", TypeInfo(DATA_INT, 1) );
-	string reg2 = mgr.getRegAndPromote();
+	//symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 1) );
+	//string reg1 = mgr.getReg();
+	//std::cout << "reg1 is " << reg1 << std::endl;
+	//mgr.storeToRegImm(reg1, 1);
+	
+	//symbolsTable.addSymbol("y", TypeInfo(DATA_INT, 3) );
+	//string reg2 = mgr.getReg();
+	//std::cout << "reg2 is " << reg2 << std::endl;
+	//mgr.storeToRegImm(reg2, 3);
+	
+	
+	
+	
+	//symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 1) );
+	//mgr.storeRegsToStack();
+	//mgr.loadRegsFromStack();
 	
 	//int fpOffset = symbolsTable.getSymbolOffset("x");
 	//asmStack.getFPOffset("x", symbolsTable);
 	//std::cout << fpOffset << std::endl;
 	
 	
-	asmStack.addNewVar("x",reg1,symbolsTable);
-	asmStack.addNewVar("y",reg1,symbolsTable);
-	asmStack.updateVar("x",reg1,symbolsTable);
+	//asmStack.addNewVar("x",symbolsTable);
+	//asmStack.addNewVar("y",symbolsTable);
+	//asmStack.updateArrEntry("y",symbolsTable,reg1,reg2);
+	//asmStack.addNewVar("z",symbolsTable,reg2);
+	//asem.multiply(reg1,reg2,false);
+	//asmStack.updateVar("z",symbolsTable,reg1);
 	
 	
+	//reg1 = asmStack.loadVar("x",symbolsTable);
+	//reg2 = asmStack.loadVar("y",symbolsTable);
+	//std::cout << "reg1 is " << reg1 << std::endl;
+	//
 	//string reg2 = mgr.getRegAndPromote();
 	//string reg3 = mgr.getRegAndPromote();
 	
-	//mgr.storeToRegImm(reg1, 5);
+	
 	//mgr.storeToRegImm(reg2, 4);
 	//mgr.storeToRegImm(reg3, 3);
 	
@@ -46,8 +85,8 @@ int main(){
 	//asem.multiply(reg1,reg2,false);
 	//asem.sub(reg1,reg2, false);
 	
-	//mgr.freeCurrReg();
-	mgr.freeCurrReg();
+	
+	//mgr.freeReg(reg1);
 	
 	
 	
