@@ -212,9 +212,9 @@ class AssemblyStack {
 		string tmpReg = mgr.getReg();
 		mgr.storeToRegImm(tmpReg, size - 1); //since index starts from 0
 		
-		BP.emit("bgt " + regArrIndex +"," + tmpReg+",array_out_of_bound:");
+		BP.emit("bgt " + regArrIndex +"," + tmpReg+",array_out_of_bound"); //TODO - add this label
 		mgr.storeToRegImm(tmpReg, 0);
-		BP.emit("blt " + regArrIndex +"," + tmpReg+",array_out_of_bound:");
+		BP.emit("blt " + regArrIndex +"," + tmpReg+",array_out_of_bound");
 		mgr.freeReg(tmpReg);
 	}
 public:
@@ -263,21 +263,28 @@ public:
 				
 	}
 	//should be used when updating var (ID ASSIGN Exp SC)
-	void updateVar(string id, SymbolsTable symTable, string reg){
+	void updateVar(string id, SymbolsTable symTable, string reg, string arrID = ""){
 		int size = symTable.getIdTypeInfo(id).size;
 		int fpOffset = getFPOffset(id, symTable);
 		//regular var
-		if (size == 1) {
+		if (size == 1 and arrID == "") {
 			BP.emit("#---------updating variable " + id + "------------");			
 			mgr.storeFromReg(reg, toString(fpOffset) + "($fp)");
 			BP.emit("#---------finished updating variable -----------");
 		}
 		//array=array
-		else if (size > 1) {
+		else if (size > 1 && arrID != "" ) {
+			BP.emit("#---------updating array=array " + id +"="+ arrID +"------------");			
+			string tmpReg = mgr.getReg();
 			for (int i=0; i<size; i++) {
-					push();
-					mgr.storeFromReg(reg, toString(fpOffset - i*4) + "($fp)");
-				}	
+				int arrToCopyOffset = getFPOffset(arrID,symTable);
+				mgr.storeToReg(tmpReg, toString(arrToCopyOffset - i*4) + "($fp)");
+				//reg tmp = a[i]; b[i]=tmp
+						
+				mgr.storeFromReg(tmpReg, toString(fpOffset - i*4) + "($fp)");
+			}	
+			mgr.freeReg(tmpReg); 
+			BP.emit("#---------finished updating array=array -----------");
 		}
 		else {
 			ASSERT(false, "var size is less than 1 (WTF)");
@@ -289,17 +296,40 @@ public:
 		BP.emit("#---------updating array entry " + id + "------------");
 		validateArrLim(id, symTable, regArrIndex);
 		int fpOffset = getFPOffset(id, symTable); //array offset from $fp
-		string tmpReg = mgr.getReg();
+		string tmpReg = mgr.getReg(); //tmpReg holds the final offset
+		string tmpReg2 = mgr.getReg(); //tmpReg2 holds the byte offset from regArrIndex
+		BP.emit("move " + tmpReg2 + "," + regArrIndex);
 		mgr.storeToRegImm(tmpReg,fpOffset);
 		
-		arithCommds.multiplyImm(regArrIndex, -4);
+		arithCommds.multiplyImm(tmpReg2, -4);
 		
-		arithCommds.add(tmpReg, regArrIndex); //entry offset
+		arithCommds.add(tmpReg, tmpReg2); //entry offset
 		arithCommds.add(tmpReg, "$fp"); //entry location
 		
 		mgr.storeFromReg(regVal, "("+tmpReg+")");
 		mgr.freeReg(tmpReg);
+		mgr.freeReg(tmpReg2);
 		BP.emit("#---------finished updating array entry -----------");
+	}
+	//Exp : ID LBRACK Exp RBRACK
+	void getArrEntry(string id, SymbolsTable symTable, string regArrIndex, string regRes){
+		BP.emit("#---------getting array entry " + id + "------------");
+		validateArrLim(id, symTable, regArrIndex);
+		int fpOffset = getFPOffset(id, symTable); //array offset from $fp
+		string tmpReg = mgr.getReg(); //tmpReg holds the final offset
+		string tmpReg2 = mgr.getReg(); //tmpReg2 holds the byte offset from regArrIndex
+		BP.emit("move " + tmpReg2 + "," + regArrIndex);
+		mgr.storeToRegImm(tmpReg,fpOffset);
+		
+		arithCommds.multiplyImm(tmpReg2, -4);
+		
+		arithCommds.add(tmpReg, tmpReg2); //entry offset
+		arithCommds.add(tmpReg, "$fp"); //entry location
+		
+		mgr.storeToReg(regRes, "("+tmpReg+")");
+		mgr.freeReg(tmpReg);
+		mgr.freeReg(tmpReg2);
+		BP.emit("#---------finished getting array entry -----------");
 	}
 	//should be used when loading var (EXP ID), returns register with loaded var
 	string loadVar(string id, SymbolsTable symTable){
@@ -324,13 +354,73 @@ public:
 class AssemblyCommands {
 	RegisterManager mgr;  
 	AssemblyStack asmStack;
+	int getArgsOffset(vector<TypeInfo> argsTypes){
+		int totalArgsOffset = 0;
+		for (vector<TypeInfo>::iterator it = argsTypes.begin(); it != argsTypes.end(); ++it) {
+			totalArgsOffset += (*it).size;
+		}
+		std::cout << "size is " << totalArgsOffset << std::endl;
+		return (4) * totalArgsOffset;
+	}
 public:	
-	void callFuncWithoutParams(Func func) {
-		mgr.storeRegsToStack();
+	void callFunc() {
+		int totalArgsOffset = getArgsOffset(argsTypes);
+		//mgr.storeRegsToStack();
 		asmStack.saveFP();
 		asmStack.push(); //for $ra?
+		totalArgsOffset += 8; //for saved fp + ra
+		BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
+		
+		
+		
 		//TODO jal to func label
-		mgr.loadRegsFromStack();
+		//mgr.loadRegsFromStack();
+	}
+	
+	//Call : ID LPAREN ExpList.argList RPAREN
+	void callFuncWithParams(Func func, vector<TypeInfo> argList, SymbolsTable symTable) {
+		int totalArgsOffset = getArgsOffset(argList);
+		//mgr.storeRegsToStack();
+		asmStack.saveFP();
+		asmStack.push(); //for $ra
+		totalArgsOffset += 8; //for saved fp + ra
+		BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
+		
+		
+		//make room in stack for arguments
+		std::vector<argList>::reverse_iterator rit = myvector.rbegin();
+		for (; rit!= argList.rend(); ++rit) {
+			
+			
+			
+			
+			
+			
+		}
+		
+		
+		
+		
+		
+		//update stack with arg's values
+		rit = argList.rbegin();
+		for (; rit!= argList.rend(); ++rit) {
+			//add array arg
+			if( (*it).reg == "" && (*it).id != "") {
+				asmStack.addNewVar();
+			}
+			//add regular var
+			else if( (*it).reg != "" && (*it).id == ""){
+				asmStack.addNewVar();
+			}
+			else{
+				ASSERT(false, "something wrong with one of the arguments");
+			}
+		}
+		
+		
+		//TODO jal to func label
+		//mgr.loadRegsFromStack();
 	}
 	
 	

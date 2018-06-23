@@ -15,28 +15,82 @@ SymbolsTable symbolsTable;
 AssemblyStack asmStack;
 
 
-void updateArrEntry(){
+void updateArr(){
 	
 	string reg1 = mgr.getReg();
 	std::cout << "reg1 is " << reg1 << std::endl;
-	mgr.storeToRegImm(reg1, 0);
+	mgr.storeToRegImm(reg1, 2);
 	
-	symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 2) );
-	symbolsTable.addSymbol("y", TypeInfo(DATA_INT, 3) );
 	string reg2 = mgr.getReg();
 	std::cout << "reg2 is " << reg2 << std::endl;
 	mgr.storeToRegImm(reg2, 9);
 	
+	symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 3) );
+	symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 1) );
+	symbolsTable.addSymbol("y", TypeInfo(DATA_INT, 3) );
+	
 	asmStack.addNewVar("x",symbolsTable);
+	asmStack.addNewVar("z",symbolsTable);
 	asmStack.addNewVar("y",symbolsTable);
-	asmStack.updateArrEntry("y",symbolsTable,reg1,reg2);
+	asmStack.updateArrEntry("x",symbolsTable,reg1,reg2); //x[2]=9
+	
+	string reg3 = mgr.getReg();
+	asmStack.getArrEntry("x",symbolsTable,reg1,reg3);
+	
+	asmStack.updateVar("y",symbolsTable,"","x"); //y[]=x[]
+}
+
+void functionArgs(){
+	
+	vector<TypeInfo> args;
+    args.push_back(TypeInfo(DATA_INT));
+    string funcName = string("test");
+    Func func(funcName, args, TypeInfo(DATA_VOID));
+	symbolsTable.addFuncSymbol(func);
+	
+	symbolsTable.addArgSymbol("x", TypeInfo(DATA_INT, 1) );
+	asmStack.addNewVar("x",symbolsTable);
+	symbolsTable.addArgSymbol("y", TypeInfo(DATA_INT, 1) );
+	asmStack.addNewVar("y",symbolsTable);
+	symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 1) );
+	asmStack.addNewVar("y",symbolsTable);
+	
+	string reg1 = mgr.getReg();
+	std::cout << "reg1 is x" << reg1 << std::endl;
+	mgr.storeToRegImm(reg1, 1);
+	
+	string reg2 = mgr.getReg();
+	std::cout << "reg2 is y" << reg2 << std::endl;
+	mgr.storeToRegImm(reg2, 2);
+	
+	string reg3 = mgr.getReg();
+	std::cout << "reg3 is z" << reg3 << std::endl;
+	mgr.storeToRegImm(reg3, 3);
+	
+	asmStack.updateVar("x",symbolsTable,reg1); 
+	asmStack.updateVar("y",symbolsTable,reg2); 
+	asmStack.updateVar("z",symbolsTable,reg3); 
+}
+
+void callFunc(){
+	vector<TypeInfo> args;
+    args.push_back(TypeInfo(DATA_INT));
+	args.push_back(TypeInfo(DATA_INT,3));
+    string funcName = string("test");
+    Func func(funcName, args, TypeInfo(DATA_VOID));
+	symbolsTable.addFuncSymbol(func);
+	
+	asem.callFuncWithoutParams(func);
+	
 }
 
 
 int main(){
 	symbolsTable.addScope();
 	
-	updateArrEntry();
+	callFunc();
+	//functionArgs();
+	//updateArr();
 	//symbolsTable.addScope();
 	
 	//symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 1) );
