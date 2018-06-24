@@ -43,7 +43,8 @@ struct TypeInfo {
 
     TypeInfo(){
         type = DATA_INVALID;
-        reg = "";
+        size = 0;
+        id = "";
     }
     TypeInfo(DATA_TYPE inType, int inSize = 1){
         type  = inType;

@@ -385,7 +385,7 @@ public:
 	}
 	
 	//Call : ID LPAREN ExpList.argList RPAREN
-	void callFuncWithParams(Func func, vector<TokenClass*> argList, SymbolsTable &symTable) {
+	void callFuncWithParams(Func func, vector<TokenClass*> &argList, SymbolsTable &symTable) {
 		BP.emit("#----- jumping to function" + func.id );
 		//int totalArgsOffset = getArgsOffset(argList);
 		//mgr.storeRegsToStack();
@@ -397,7 +397,7 @@ public:
 	
 		//update stack with arg's values		
 		BP.emit("#----- passing arguments to function -----");
-		std::vector<TypeInfo>::reverse_iterator rit = argList.rbegin();
+		std::vector<TokenClass*>::reverse_iterator rit = argList.rbegin();
 		for (; rit!= argList.rend(); ++rit) {
 			//add array arg
 			if( (*rit)->typeInfo.id != "") {
