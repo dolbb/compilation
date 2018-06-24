@@ -33,15 +33,17 @@ typedef enum {
     DATA_ARR_BYTE,
     DATA_ARR_INT,
     DATA_ARR_BOOL,
-    DATA_ARR_STRING,
     DATA_INVALID
 } DATA_TYPE;
 
 struct TypeInfo {
 	DATA_TYPE type;
 	int size;
+    string id;
+
     TypeInfo(){
         type = DATA_INVALID;
+        reg = "";
     }
     TypeInfo(DATA_TYPE inType, int inSize = 1){
         type  = inType;
@@ -72,8 +74,6 @@ struct TypeInfo {
                 return "INT";
             case DATA_ARR_BOOL: 
                 return "BOOL";
-            case DATA_ARR_STRING: 
-                return "STRING";
         }
         return ""; 
     }    
@@ -104,14 +104,27 @@ struct TypeInfo {
             case DATA_ARR_BOOL: 
                 res << "BOOL[" << size << "]";
                 break;
-            case DATA_ARR_STRING: 
-                res << "STRING[" << size << "]";
-                break;
             default:
                 res << "";
         }
         return res.str(); 
     }
+};
+
+/*=======================================
+        Translation Auxiliary classes:    
+=======================================*/
+struct TranslationAux{
+    string assignedReg;
+    string quad;
+    string startLable;
+    vector<int> trueList;
+    vector<int> falseList;
+    vector<int> nextList;
+    vector<int> breakList;
+    vector<string> valueList;
+    vector<string> quadList;
+    vector<int> afterExp;
 };
 
 /*=======================================
@@ -121,6 +134,8 @@ struct Func{
 	string id;
 	vector<TypeInfo> argsTypes;
     TypeInfo funcRetVal;
+    string label;
+
     Func(string inId, vector<TypeInfo> inArgsVec, TypeInfo retVal){
 		id = inId;
         argsTypes = inArgsVec;
@@ -303,7 +318,7 @@ public:
             DATA_TYPE type = it->typeInfo.type;
             string typeStr = it->typeInfo.getAsString();
             if( type == DATA_ARR_BYTE   || type == DATA_ARR_INT    ||
-                type == DATA_ARR_BOOL   || type == DATA_ARR_STRING ){
+                type == DATA_ARR_BOOL ){
                 int arrSize = it->typeInfo.size;
                 cout << it->id << " " << makeArrayType(typeStr, arrSize) << " " << it->symbolOffset <<endl;
             }
@@ -330,6 +345,7 @@ class TokenClass : public Node{
 public:
     TypeInfo typeInfo;
     vector<TypeInfo> argList;
+    TranslationAux transAux;
 
     TokenClass(){}
     TokenClass(TypeInfo inTypeInfo){

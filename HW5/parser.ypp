@@ -1,6 +1,6 @@
-/*========================================
-	section 1	-	c user declerations
-========================================*/
+/*========================================================
+			section 1	-	c user declerations
+========================================================*/
 %{
 	#include <iostream>
 	#include "output.hpp"
@@ -9,22 +9,34 @@
 	using namespace std;
 	using namespace output;
 
-	/*	external data:			*/
+	/*	external data:					*/
 	extern int yylex();
 	extern int yylineno;
 	void yyerror(const char*);
 	
-	/*	global data:			*/
+	/*	global data:					*/
 	SymbolsTable symbolsTable; 	/* symbols data is stored here 	*/
 	int numOfWhileContaining = 0;	/* field for when a break occures	*/
 	bool isMainExist = false;
 	TypeInfo funcReturnDataType; //this holds the current expected return type of a function
 	string currentFuncId;
-	
-	/*	local functions:		*/
-	TokenClass* logicalOpAction(TokenClass* exp1, TokenClass* exp2);
-	TokenClass* relOpAction(TokenClass* exp1, TokenClass* exp2);
-	TokenClass* binOpAction(TokenClass* exp1, TokenClass* exp2);
+	AssemblyArithmeticCommands arithMgr;
+	AssemblyStack asmStack;
+	AssemblyCommands asmCmd; 
+
+	/*	translation addition: 			*/
+	CodeBuffer& codeBuff = CodeBuffer::instance();
+	RegisterManager mgr;
+	int numOfStrings = 0;
+	vector<TokenClass*> expListVec;
+
+	/*	local functions:				*/
+	TokenClass* basicBoolPrint(bool isTrue);
+	void checkBoolAndGenPrint(TokenClass* token, string reg);
+	void relOpPrint(string op, TokenClass* resTok, TokenClass* leftExp, TokenClass* rightExp);
+	TokenClass* logicalOpAction(TokenClass* exp1, TokenClass* exp2, string op, string quad);
+	TokenClass* relOpAction(TokenClass* exp1, TokenClass* exp2, string op);
+	TokenClass* binOpAction(TokenClass* exp1, TokenClass* exp2, string op);
 	void verifyNumber(TokenClass* e);
 	void verifyNumber(TokenClass* e1, TokenClass* e2);
 	void verifyBool(TokenClass* e);
@@ -40,9 +52,9 @@
 	DATA_TYPE getTypeAsArrType(DATA_TYPE type);
 %}
 
-/*========================================
-	section 2.1	-	declerations
-========================================*/
+/*========================================================
+			section 2.1	-	declerations
+========================================================*/
 %token VOID
 %token INT
 %token BYTE
@@ -77,9 +89,9 @@
 %left LBRACE RBRACE
 
 %%
-/*========================================
-	section 2.2	-	rules	
-========================================*/
+/*========================================================
+			section 2.2	-	rules	
+========================================================*/
 /*----------Program---------------------*/
 Program 	: Funcs{};
 
@@ -368,7 +380,6 @@ Statement : ID ASSIGN Exp SC{
 		case DATA_ARR_BYTE:
 		case DATA_ARR_INT:
 		case DATA_ARR_BOOL:
-		case DATA_ARR_STRING:
 			if(token3->typeInfo != typeInfo){
 				errorMismatch(yylineno);
 				exit(1);
@@ -404,12 +415,6 @@ Statement : ID LBRACK Exp RBRACK ASSIGN Exp SC{
 			break;
 		case DATA_ARR_BOOL:
 			verifyBool(token6);
-			break;
-		case DATA_ARR_STRING:
-			if(token6->typeInfo.type != DATA_STRING){
-				errorMismatch(yylineno);
-				exit(1);
-			}
 			break;
 		default:
 			errorMismatch(yylineno);
@@ -501,7 +506,6 @@ Call : ID LPAREN ExpList RPAREN{
 	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
 	vector<string> tmpArgVec;
 	convertTypeInfoVecToStringVec(f.argsTypes, tmpArgVec);
-
 	if(f.argsTypes.size() != token3->argList.size()){
 		errorPrototypeMismatch(yylineno, s, tmpArgVec);
 		exit(1);
@@ -514,9 +518,56 @@ Call : ID LPAREN ExpList RPAREN{
 			}
 		}
 	}
+	//start of HW5 part:
+	TokenClass* retToken = new TokenClass(f.funcRetVal);
+	/*start with jumping to the start of the func (at this point all args calculated): */
+	retToken->transAux.afterExp = CodeBuffer::makelist(codeBuff.emit("j "));
+	//for each argument, if bool, calculate BP part:
+	
+	//TODO:check this loop:
+
+	for (int i = 0; i < expListVec.size(); i++){
+		if (expListVec[i]->typeInfo.type != DATA_BOOL){
+			continue;
+		}
+		string reg = mgr.getReg();
+		expListVec[i]->transAux.assignedReg = reg;
+		stringstream trueStream, falseStream, nextStream;
+		string trueLable = codeBuff.genLabel();			//generate true lable for BP purpose.
+		trueStream << "li " << reg << ", 1";			//trueStream = set the reg the value of true.
+		codeBuff.emit(trueStream.str());				//save 1 (true) into the reg as said in trueStream.
+		if (i != (expListVec.size() - 1)){
+			nextStream.clear();
+			nextStream << "j " << expListVec[i+1]->transAux.startLable;
+			code_buffer.emit(nextStream.str());
+		} 
+		else {
+			$$.after_exp = CodeBuffer::merge($$.after_exp,CodeBuffer::makelist(code_buffer.emit("j ")));
+		}
+		code_buffer.bpatch(exp_global.back()[i].true_list, trueLable);
+
+		string falseLabel = codeBuff.genLabel();		//generate false lable for BP purpose.
+		falseStream << "li " << reg << ", 0";			//falseStream = set the reg the value of false.
+		
+		code_buffer.emit(false_code.str());
+		if (i < exp_global.back().size()-1){
+			nextStream.clear();
+			nextStream << "j " << exp_global.back()[i+1].start_exp;
+			code_buffer.emit(nextStream.str());
+		}
+		else {
+			$$.after_exp = CodeBuffer::merge($$.after_exp,CodeBuffer::makelist(code_buffer.emit("j ")));
+		}
+		
+		code_buffer.bpatch(exp_global.back()[i].false_list, falseLabel);
+	}
+	asmCmd.callFuncWithParams(f, expListVec, symbolsTable);
+	for(int i = 0; i < expListVec.size(); i++){
+		delete expListVec[i];
+	} 
 	delete $1;
 	delete $3;
-	$$ = new TokenClass(f.funcRetVal);
+	$$ = retToken;
 };
 
 Call : ID LPAREN RPAREN{
@@ -529,31 +580,33 @@ Call : ID LPAREN RPAREN{
 		errorPrototypeMismatch(yylineno, s, tmpArgVec);
 		exit(1);
 	}
+	TokenClass* token = new TokenClass(f.funcRetVal);
+	token->transAux.startLable = codeBuff.genLable();
+	callFunc(f, symbolTable);
 	delete $1;
-	$$ = new TokenClass(f.funcRetVal);
+	$$ = token;
 };
 
 /*----------ExpList---------------------*/
 ExpList	: Exp{
-	TokenClass* retToken = new TokenClass();
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	retToken->argList.push_back(token1->typeInfo);
+	TokenClass* retToken = new TokenClass();			//generate a returned token.
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);	//cast and rename the input exp.
+	expListVec.push_back(token1);
+	retToken->argList.push_back(token1->typeInfo);			
 	$$ = retToken;
-	delete $1;
 };
 
-ExpList	: Exp COMMA ExpList{
-	TokenClass* retToken = new TokenClass();
+ExpList	: Exp {expListVec.push_back(dynamic_cast<TokenClass*>($1));} COMMA ExpList{
+	TokenClass* retToken = new TokenClass();				//generate a returned token.
 	//1. add the first exp type to the list.
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	retToken->argList.push_back(token1->typeInfo);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//cast and rename the input exp.
+	retToken->argList.push_back(token1->typeInfo);			
 	//2. add the rest of the exp to the vector.
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	for (vector<TypeInfo>::iterator it = token3->argList.begin(); it != token3->argList.end(); ++it) {
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);		//cast and rename the input exp list.
+	for (vector<TypeInfo>::iterator it = token4->argList.begin(); it != token4->argList.end(); ++it) {
 		retToken->argList.push_back(*it);
    	}
-	delete $1;
-	delete $3;
+	delete $4;
 	$$ = retToken;
 };
 
@@ -576,7 +629,7 @@ Exp	: LPAREN Exp RPAREN{
 	$$ = $2;
 };
 
-Exp : ID LBRACK Exp RBRACK{
+Exp : ID LBRACK Exp RBRACK{	
 	string idStr = (dynamic_cast<String*>($1))->getString();
 	//1. verify id is in.
 	verifyIdInSymbols(idStr);
@@ -600,174 +653,322 @@ Exp : ID LBRACK Exp RBRACK{
 		case DATA_ARR_BOOL:
 			retExp = new TokenClass(TypeInfo(DATA_BOOL));
 			break;
-		case DATA_ARR_STRING:
-			retExp = new TokenClass(TypeInfo(DATA_STRING));
-			break;
 		default:
 			errorMismatch(yylineno);
 			exit(1);
 	}
+	string reg = mgr.getReg();
+	string reg3 = token3->transAux.assignedReg;
+	asmStack.getArrEntry(idStr, symbolTable, reg3, reg);
+	retExp->transAux.assignedReg = reg;
+	checkBoolAndGenPrint(retExp, reg);	//will release register if bool value.
+	mgr.freeReg(reg3);
 	delete $1;
 	delete $3;
 	$$ = retExp;
 };
 
 Exp : Exp PLUS Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = binOpAction(token1,token3);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.
+	$$ = binOpAction(token1, token3, "+");					//operate usign + sign.
 };
 
 Exp : Exp MINUS Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = binOpAction(token1,token3);
-};
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.		
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.		
+	$$ = binOpAction(token1, token3, "-");					//operate usign - sign.
+};				
 
 Exp : Exp MULT Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = binOpAction(token1,token3);
-};
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.
+	$$ = binOpAction(token1, token3, "*");					//operate usign * sign.
+};	
 
 Exp : Exp DIV Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = binOpAction(token1,token3);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.
+	$$ = binOpAction(token1, token3, "/");					//operate usign / sign.
 };
 
 Exp : ID{
-	string s = (dynamic_cast<String*>($1))->getString();
-	//1. check if id exists, exit if not.
-	verifyIdInSymbols(s);
-	//2. get its type from symbol table.
-	TypeInfo type = symbolsTable.getIdTypeInfo(s);
-	//3. make token out of type and return it.
-	$$ = new TokenClass(type);
+	string s = (dynamic_cast<String*>($1))->getString();	//check if id exists, exit if not.
+	verifyIdInSymbols(s);									//get its type from symbol table.
+	TypeInfo typeInfo = symbolsTable.getIdTypeInfo(s);		//make token out of type and return it.
+	TokenClass* token = new TokenClass(typeInfo);	
+	string reg;			
+	token->transAux.startLable = codeBuff.genLabel();		//generate a lable.
+	if( typeInfo.type == DATA_ARR_BOOL ||
+		typeInfo.type == DATA_ARR_INT  ||
+		typeInfo.type == DATA_ARR_BYTE ){
+		token->typeInfo.id = s;
+	}else{
+		reg = asmStack.loadVar(s, symbolTable);				//assign a register.
+		token->transAux.assignedReg = reg;					//save the assigned register.
+		checkBoolAndGenPrint(token, reg);					//generate and print a boolean branch.
+	}
 	delete $1;
+	$$ = token;
 };
 
 Exp : Call{
-	$$ = $1;
+	TokenClass* token = dynamic_cast<TokenClass*>($1);		//save the input token.
+	string reg = mgr.getReg();								//assign a register.
+	token->transAux.assignedReg = reg;						//save the assigned register.				
+	stringstream getRetValStream;
+	getRetValStream << "move " << reg << ", $v0";			//save call's return value inside the assigned reg.
+	codeBuff.emit(getRetValStream.str());					//write the line to buffer.
+	checkBoolAndGenPrint(token, reg);						//generate and print a boolean branch.
+	$$ = token;												//save the generated token.
 };
 
 Exp : NUM{
-	delete $1;
-	$$ = new TokenClass(TypeInfo(DATA_INT));
+	Num* inpNum = dynamic_cast<Num*>($1);
+	int num = inpNum->getNum();
+	TokenClass* token = new TokenClass(TypeInfo(DATA_INT));		//generate a returned token.
+	saveInputNumIntoToken(token, num);							//save needed data into token.
+	delete $1;													//clean allocated memory.
+	$$ = token;													//save the generated token.
 };
 
 Exp : NUM B{
 	Num* inpNum = dynamic_cast<Num*>($1);
 	int num = inpNum->getNum();
-	if( num < 0 || num > 255){
+	if( num < 0 || num > 255){									//validate byte range.
 		errorByteTooLarge(yylineno,inpNum->getStr());
 		delete $1;
 		exit(1);
 	}
-	delete $1;
-	$$ = new TokenClass(TypeInfo(DATA_BYTE));
+	TokenClass* token = new TokenClass(TypeInfo(DATA_BYTE));	//generate a returned token.
+	saveInputNumIntoToken(token, num);							//save needed data into token.
+	delete $1;													//clean allocated memory.
+	$$ = token;													//save the generated token.
 };
 
 Exp : STRING{
-	$$ = new TokenClass(TypeInfo(DATA_STRING));
-	delete $1;
+	TokenClass* token = new TokenClass(TypeInfo(DATA_STRING));	//generate a returned token.
+	String* inputString = dynamic_cast<String*>($1);			//save the input token.
+	string reg = mgr.getReg();
+	token->transAux.assignedReg = reg;							//save the assigned register's index.
+	stringstream dataStream;									//init all the prints:
+	stringstream textStream;
+	dataStream << "labal_data_" << numOfStrings++;
+	textStream << "la " << reg << ", " << dataStream.str();		//put only the data lable in the text stream, at the load command.
+	dataStream <<": .asciiz " << inputString->getString();		//add the string to its definition at the data section.
+	token->transAux.startLable = codeBuff.genLabel();			//generate a new lable.
+	codeBuff.emitData(dataStream.str());						//save to the data buffer.
+	codeBuff.emit(textStream.str());							//save to the text buffer.
+	delete $1;													//clean allocated memory.
+	$$ = token;													//save the generated token.
 };
 
 Exp : TRUE{
-	$$ = new TokenClass(TypeInfo(DATA_BOOL));
+	$$ = basicBoolPrint(true);
 };
 
 Exp : FALSE{
-	$$ = new TokenClass(TypeInfo(DATA_BOOL));
+	$$ = basicBoolPrint(true);
 };
 
 Exp : NOT Exp{
-	TokenClass* token2 = dynamic_cast<TokenClass*>($2);
-	$$ = logicalOpAction(token2,token2);
+	TokenClass* token2 = dynamic_cast<TokenClass*>($2);					//save the input token.
+	TokenClass* resultToken = logicalOpAction(token2,token2,"NOT","");	
+	$$ = resultToken;													//save the generated token.
 };
 
-Exp : Exp AND Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = logicalOpAction(token1,token3);
+Exp : Exp AND M Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);					//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);				
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);				
+	TokenClass* resultToken = logicalOpAction(token1, token4, "AND",token3->transAux.quad);	
+	$$ = resultToken;													//save the generated token.
 };
 
-Exp : Exp OR Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = logicalOpAction(token1,token3);
+Exp : Exp OR M Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);				//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);				
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);				
+	TokenClass* resultToken = logicalOpAction(token1, token4, "OR", token3->transAux.quad);
+	$$ = resultToken;												//save the generated token.
 };
 
 Exp : Exp EQUAL Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = relOpAction(token1,token3);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);			//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);	
+	TokenClass* resultToken = relOpAction(token1,token3,"beq ");//validate its a number and act.
+	$$ = resultToken;											//save the generated token.
 };
 
 Exp : Exp NOT_EQUAL Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);			//save the input tokens.
 	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = relOpAction(token1,token3);
+	TokenClass* resultToken = relOpAction(token1,token3,"bne ");//validate its a number and act.
+	$$ = resultToken;											//save the generated token.
 };
 
 Exp : Exp SMALLER_THAN Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input tokens.
 	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = relOpAction(token1,token3);
+	TokenClass* resultToken = relOpAction(token1,token3,"blt ");//validate its a number and act.
+	$$ = resultToken;										//save the generated token.
 };
 
 Exp : Exp GREATER_THAN Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input tokens.
 	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = relOpAction(token1,token3);
+	TokenClass* resultToken = relOpAction(token1,token3,"bgt ");//validate its a number and act.
+	$$ = resultToken;										//save the generated token.
 };
 
 Exp : Exp SMALLER_EQ_THAN Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input tokens.
 	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = relOpAction(token1,token3);
+	TokenClass* resultToken = relOpAction(token1,token3,"ble ");//validate its a number and act.
+	$$ = resultToken;										//save the generated token.
 };
 
 Exp : Exp GREATER_EQ_THAN Exp{
-	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);			//save the input tokens.
 	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
-	$$ = relOpAction(token1,token3);
+	TokenClass* resultToken = relOpAction(token1,token3,"bge ");//validate its a number and act.
+	$$ = resultToken;											//save the generated token.
+};
+
+M 	: %empty /*epsilon*/{
+	TokenClass* token = new TokenClass();		//generate token.
+	token->transAux.quad = codeBuff.genLabel();	//generate a lable at that location.
+	$$ = token;									//save the token to be returned.
+};
+
+N 	: %empty /*epsilon*/{
+	TokenClass* token = new TokenClass();									//generate token.
+	token->transAux.nextList = CodeBuffer::makelist(codeBuff.emit("j "));	//generate a jump command and set into nextList to complete it later.
+	$$ = token;																//save the token to be returned.
 };
 
 %%
-/*========================================
-	section 3	-	c user routines
-========================================*/
+/*========================================================
+			section 3	-	c user routines
+========================================================*/
+TokenClass* basicBoolPrint(bool isTrue){
+	TokenClass* token = new TokenClass(TypeInfo(DATA_BOOL));			//save the input token.
+	token->transAux.startLable = codeBuff.genLabel(); 					//generate starting point.
+	int jumpAddress = codeBuff.emit("j ");								//create a new jumping point.
+	if(isTrue){
+		token->transAux.trueList = CodeBuffer::makelist(jumpAddress);	//save it's address in the list.
+	}
+	else{
+		token->transAux.falseList = CodeBuffer::makelist(jumpAddress);	//save it's address in the list.	
+	}
+	return token;														//save the generated token.
+}
 
-TokenClass* logicalOpAction(TokenClass* exp1, TokenClass* exp2){
+void checkBoolAndGenPrint(TokenClass* token, string reg){
+	if (token->typeInfo.type == DATA_BOOL){	//in case its a bool data - generate a true/false BP infrastructure.
+		stringstream branchStream;
+		branchStream << "beq " << reg << ", 1, ";				
+		token->transAux.trueList = CodeBuffer::makelist(codeBuff.emit(branchStream.str()));
+		token->transAux.falseList = CodeBuffer::makelist(codeBuff.emit("j "));
+		mgr.freeReg(reg);					//in this case no need to save the bool value in the reg, so release it.
+		token->transAux.assignedReg = "";	//delete reg from token.
+	}
+}
+
+void saveInputNumIntoToken(TokenClass* token, int num){
+	token->transAux.startLable = codeBuff.genLabel();	//generate starting point.
+	string reg = mgr.getReg();
+	token->transAux.assignedReg = reg;					//save the register name at the token.
+	mgr.storeToRegImm(reg,num);
+}
+
+void relOpPrint(string op, TokenClass* resTok, string leftReg, string rightReg){
+	resTok->startLable = codeBuff.genLabel();
+	stringstream command;
+	command << op << leftReg << ", " << rightReg << ", ";
+	resTok->transAux.trueList = CodeBuffer::makelist(codeBuff.emit(command.str()));
+	resTok->transAux.falseList = CodeBuffer::makelist(codeBuff.emit("j "));
+	mgr.freeReg(leftReg);
+	mgr.freeReg(RightReg);
+}
+
+TokenClass* logicalOpAction(TokenClass* exp1, TokenClass* exp2, string op, string quad){
 	verifyBool(exp1,exp2);
+	TokenClass* token = new TokenClass(TypeInfo(DATA_BOOL));
+	/*use the same starting lable as the first bool.*/
+	token->transAux.startLable = exp1->transAux.startLable;	
+	switch(op){
+		case "NOT":
+			/*switch all the places for true with false.*/
+			token->transAux.trueList 	= exp1->transAux.falseList; 
+			/*switch all the places for false with true.*/
+			token->transAux.falseList  	= exp1->transAux.trueList;	
+			break;
+		case "AND":
+			/*for AND op we need to merge false lists - one false jumps to "false code section".*/
+			token->transAux.falseList = CodeBuffer::merge(exp1->transAux.falseList, exp2->transAux.falseList);
+			/*for AND op we need all previus true (left-most) values to jump to M position.*/
+			codeBuff.bpatch(exp1->transAux.trueList, quad);
+			/*current trueList will have the same as right Exp list.*/
+			token->transAux.trueList = exp2->transAux.trueList;  	
+			break;
+		case "OR":
+			/*for OR op we need to merge true lists - one true jumps to "true code section".*/
+			token->transAux.trueList = CodeBuffer::merge(exp1->transAux.trueList, exp2->transAux.trueList);
+			/*for OR op we need all previus false (left-most) values to jump to M position.*/
+			codeBuff.bpatch(token1->transAux.falseList, quad);
+			/*current falseList will have the same as right Exp list.*/
+			token->transAux.falseList = exp2->transAux.falseList;  	
+			break;
+	}
 	if(exp1 != exp2){
 		delete exp2;
 	}
 	delete exp1;
-	return new TokenClass(TypeInfo(DATA_BOOL));
+	return token;
 }
 
-TokenClass* relOpAction(TokenClass* exp1, TokenClass* exp2){
+TokenClass* relOpAction(TokenClass* exp1, TokenClass* exp2, string op){
 	verifyNumber(exp1, exp2);
+	TokenClass* retExp = new TokenClass(TypeInfo(DATA_BOOL));
+	relOpPrint(op, retExp, exp1->transAux.assignedReg, exp2->transAux.assignedReg);
 	if(exp1 != exp2){
 		delete exp2;
 	}
 	delete exp1;
-	return new TokenClass(TypeInfo(DATA_BOOL));
+	return retExp;
 }
 
-TokenClass* binOpAction(TokenClass* exp1, TokenClass* exp2){
+TokenClass* binOpAction(TokenClass* exp1, TokenClass* exp2, string op){
 	verifyNumber(exp1, exp2);
 	TypeInfo retType(DATA_INT);
+	bool isByte = false;
 	if(exp1->typeInfo.type == DATA_BYTE && exp2->typeInfo.type == DATA_BYTE){
 		retType.type = DATA_BYTE;
+		isByte = true;
 	}
-	if(exp1 != exp2){
-		delete exp2;
+	TokenClass* token = new TokenClass(retType);
+	string leftReg = exp1->transAux.assignedReg;
+	string rightReg = exp2->transAux.assignedReg; 
+	switch(op){
+		case "+":
+			arithMgr.add(leftReg, rightReg, isByte);
+			break;
+		case "-":
+			arithMgr.sub(leftReg, rightReg, isByte);
+			break;
+		case "*":
+			arithMgr.multiply(leftReg, rightReg, isByte);
+			break;
+		case "/":
+			arithMgr.divide(leftReg, rightReg, isByte);
+			break;						
 	}
+	token->transAux.assignedReg = leftReg;
+	mgr.freeReg(rightReg);
+	delete exp2;
 	delete exp1;
-	return new TokenClass(retType);
+	return token;
 }
 
 void verifyNumber(TokenClass* e){
