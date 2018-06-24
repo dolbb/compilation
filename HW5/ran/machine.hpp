@@ -385,7 +385,7 @@ public:
 	}
 	
 	//Call : ID LPAREN ExpList.argList RPAREN
-	void callFuncWithParams(Func func, vector<TypeInfo> argList, SymbolsTable symTable) {
+	void callFuncWithParams(Func func, vector<TokenClass*> argList, SymbolsTable &symTable) {
 		BP.emit("#----- jumping to function" + func.id );
 		//int totalArgsOffset = getArgsOffset(argList);
 		//mgr.storeRegsToStack();
@@ -400,21 +400,23 @@ public:
 		std::vector<TypeInfo>::reverse_iterator rit = argList.rbegin();
 		for (; rit!= argList.rend(); ++rit) {
 			//add array arg
-			if( (*rit).reg == "" && (*rit).id != "") {
+			if( (*rit)->typeInfo.id != "") {
 				string tmpReg = mgr.getReg(); 
 				string tmpReg2 = mgr.getReg(); //for index a[index]
-				int size = symTable.getIdTypeInfo((*rit).id).size;
+				int size = symTable.getIdTypeInfo((*rit)->typeInfo.id).size;
 				for (int i=0; i<size; i++) {
 					mgr.storeToRegImm(tmpReg2,i);
-					asmStack.getArrEntry((*rit).id, symTable, tmpReg2, tmpReg);
+					asmStack.getArrEntry((*rit)->typeInfo.id, symTable, tmpReg2, tmpReg);
 					asmStack.storeArg(tmpReg);
 				}		
 				mgr.freeReg(tmpReg);
 				mgr.freeReg(tmpReg2);
 			}
 			//add regular var
-			else if( (*rit).reg != "" && (*rit).id == ""){
-				asmStack.storeArg((*rit).reg);
+			else if( (*rit)->typeInfo.id == ""){
+				string reg = (*rit)->transAux.assignedReg;
+				asmStack.storeArg(reg);
+				mgr.freeReg(reg);
 			}
 			else{
 				ASSERT(false, "something wrong with one of the arguments");

@@ -1,11 +1,7 @@
-.data
-div_data: .asciiz "Error division by zero\n"
-array_out_of_bound: .asciiz "Error index out of bounds\n"
-labal_data_1: .asciiz "val is true\n"
-labal_data_2: .asciiz "\n"
+reg1 is x$25
+reg2 is y$24
+reg3 is z$23
 .text
-main:
-move $fp, $sp
 li $25, 2
 li $24, 9
 li $23, 3
@@ -32,12 +28,13 @@ addu $22,$22,$21
 addu $22,$22,$fp
 sw $24, ($22)
 #---------finished updating array entry -----------
+#----- jumping to functiontest
 #--- store fp on stack ---
 subu $sp, $sp, 4 #push stack
 sw $fp, ($sp)
 #--- finished storing fp on stack ---
 subu $sp, $sp, 4 #push stack
-#---------- passing arguments to function -----------
+#----- passing arguments to function -----
 subu $sp, $sp, 4 #push stack
 sw $23, ($sp)
 li $21, 0
@@ -93,5 +90,6 @@ subu $sp, $sp, 4 #push stack
 sw $22, ($sp)
 subu $sp, $sp, 4 #push stack
 sw $25, ($sp)
-#---------- finished passing arguments to function -----------
-
+#----- finished passing arguments to function ----
+jal 
+#----- finished jumping to function -----

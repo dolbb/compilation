@@ -108,7 +108,7 @@ void callFunc(){
     Func func(funcName, args, TypeInfo(DATA_VOID));
 	symbolsTable.addFuncSymbol(func);
 	
-	asem.callFuncWithParams(func, args, symbolsTable);
+	//asem.callFuncWithParams(func, args, symbolsTable);
 	
 }
 
