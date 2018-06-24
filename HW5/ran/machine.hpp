@@ -340,6 +340,13 @@ public:
 		BP.emit("#---------finished loading variable -----------");
 		return reg;
 	}
+	void storeArg(string reg){
+		push();
+		mgr.storeFromReg(reg,"($sp)");
+	}
+	void storeArgArray(string id, SymbolsTable symTable){
+		
+	}
 	void saveFP(){
 		BP.emit("#--- store fp on stack ---");
 		push();
@@ -364,12 +371,12 @@ class AssemblyCommands {
 	}
 public:	
 	void callFunc() {
-		int totalArgsOffset = getArgsOffset(argsTypes);
+		//int totalArgsOffset = getArgsOffset(argsTypes);
 		//mgr.storeRegsToStack();
-		asmStack.saveFP();
-		asmStack.push(); //for $ra?
-		totalArgsOffset += 8; //for saved fp + ra
-		BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
+		//asmStack.saveFP();
+		//asmStack.push(); //for $ra?
+		//totalArgsOffset += 8; //for saved fp + ra
+		//BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
 		
 		
 		
@@ -379,46 +386,44 @@ public:
 	
 	//Call : ID LPAREN ExpList.argList RPAREN
 	void callFuncWithParams(Func func, vector<TypeInfo> argList, SymbolsTable symTable) {
-		int totalArgsOffset = getArgsOffset(argList);
+		BP.emit("#----- jumping to function" + func.id );
+		//int totalArgsOffset = getArgsOffset(argList);
 		//mgr.storeRegsToStack();
 		asmStack.saveFP();
 		asmStack.push(); //for $ra
-		totalArgsOffset += 8; //for saved fp + ra
-		BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
+		//totalArgsOffset += 8; //for saved fp + ra
+		//BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
 		
-		
-		//make room in stack for arguments
-		std::vector<argList>::reverse_iterator rit = myvector.rbegin();
-		for (; rit!= argList.rend(); ++rit) {
-			
-			
-			
-			
-			
-			
-		}
-		
-		
-		
-		
-		
-		//update stack with arg's values
-		rit = argList.rbegin();
+	
+		//update stack with arg's values		
+		BP.emit("#----- passing arguments to function -----");
+		std::vector<TypeInfo>::reverse_iterator rit = argList.rbegin();
 		for (; rit!= argList.rend(); ++rit) {
 			//add array arg
-			if( (*it).reg == "" && (*it).id != "") {
-				asmStack.addNewVar();
+			if( (*rit).reg == "" && (*rit).id != "") {
+				string tmpReg = mgr.getReg(); 
+				string tmpReg2 = mgr.getReg(); //for index a[index]
+				int size = symTable.getIdTypeInfo((*rit).id).size;
+				for (int i=0; i<size; i++) {
+					mgr.storeToRegImm(tmpReg2,i);
+					asmStack.getArrEntry((*rit).id, symTable, tmpReg2, tmpReg);
+					asmStack.storeArg(tmpReg);
+				}		
+				mgr.freeReg(tmpReg);
+				mgr.freeReg(tmpReg2);
 			}
 			//add regular var
-			else if( (*it).reg != "" && (*it).id == ""){
-				asmStack.addNewVar();
+			else if( (*rit).reg != "" && (*rit).id == ""){
+				asmStack.storeArg((*rit).reg);
 			}
 			else{
 				ASSERT(false, "something wrong with one of the arguments");
 			}
 		}
+		BP.emit("#----- finished passing arguments to function ----");
 		
-		
+		BP.emit("jal " + func.label);
+		BP.emit("#----- finished jumping to function -----");
 		//TODO jal to func label
 		//mgr.loadRegsFromStack();
 	}

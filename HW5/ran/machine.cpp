@@ -73,6 +73,46 @@ void functionArgs(){
 }
 
 void callFunc(){
+	string reg1 = mgr.getReg();
+	std::cout << "reg1 is x" << reg1 << std::endl;
+	mgr.storeToRegImm(reg1, 2);
+	
+	string reg2 = mgr.getReg();
+	std::cout << "reg2 is y" << reg2 << std::endl;
+	mgr.storeToRegImm(reg2, 9);
+	
+	string reg3 = mgr.getReg();
+	std::cout << "reg3 is z" << reg3 << std::endl;
+	mgr.storeToRegImm(reg3, 3);
+	
+		
+	vector<TypeInfo> args;
+	
+	TypeInfo type1 = TypeInfo(DATA_INT);
+	type1.reg = reg1;
+		
+	TypeInfo type2 = TypeInfo(DATA_INT,3);
+	type2.id = "x";
+	symbolsTable.addSymbol("x", type2 );
+	asmStack.addNewVar("x",symbolsTable);
+	asmStack.updateArrEntry("x",symbolsTable,reg1,reg2); //x[2]=9
+	
+	TypeInfo type3 = TypeInfo(DATA_INT);
+	type3.reg = reg3;
+	
+    args.push_back(type1);
+	args.push_back(type2);
+	args.push_back(type3);
+    
+	string funcName = string("test");
+    Func func(funcName, args, TypeInfo(DATA_VOID));
+	symbolsTable.addFuncSymbol(func);
+	
+	asem.callFuncWithParams(func, args, symbolsTable);
+	
+}
+
+void callFuncWithParams(){
 	vector<TypeInfo> args;
     args.push_back(TypeInfo(DATA_INT));
 	args.push_back(TypeInfo(DATA_INT,3));
@@ -80,7 +120,7 @@ void callFunc(){
     Func func(funcName, args, TypeInfo(DATA_VOID));
 	symbolsTable.addFuncSymbol(func);
 	
-	asem.callFuncWithoutParams(func);
+	//asem.callFunc(func);
 	
 }
 

@@ -40,6 +40,8 @@ typedef enum {
 struct TypeInfo {
 	DATA_TYPE type;
 	int size;
+	string reg;
+	string id;
     TypeInfo(){
         type = DATA_INVALID;
     }
@@ -119,6 +121,7 @@ struct TypeInfo {
 =======================================*/
 struct Func{
 	string id;
+	string label;
 	vector<TypeInfo> argsTypes;
     TypeInfo funcRetVal;
     Func(string inId, vector<TypeInfo> inArgsVec, TypeInfo retVal){
