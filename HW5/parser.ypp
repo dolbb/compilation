@@ -176,6 +176,7 @@ FormalDecl : Type ID{
 	//2. insert to symbol table (manage offset and all this shit).
 	TokenClass* token = dynamic_cast<TokenClass*>($1);
 	symbolsTable.addArgSymbol(s,TypeInfo(token->typeInfo.type));
+	asmStack.addNewVar(s, symbolsTable);
 	$$ = new TokenClass(TypeInfo(token->typeInfo));
 	delete $1;
 	delete $2;
@@ -205,6 +206,7 @@ FormalDecl : Type ID LBRACK NUM RBRACK{
 	typeInfo.type = getTypeAsArrType(token->typeInfo.type);
 	typeInfo.size = num;
 	symbolsTable.addArgSymbol(s,typeInfo);
+	asmStack.addNewVar(s, symbolsTable);
 	$$ = new TokenClass(typeInfo);
 	delete $1;
 	delete $2;
@@ -243,6 +245,7 @@ FormalDecl : Type ID LBRACK NUM B RBRACK{
 	typeInfo.type = getTypeAsArrType(token->typeInfo.type);
 	typeInfo.size = num;
 	symbolsTable.addArgSymbol(s,typeInfo);
+	asmStack.addNewVar(s, symbolsTable);
 	$$ = new TokenClass(typeInfo);
 	delete $1;
 	delete $2;
@@ -262,6 +265,7 @@ Statement : Type ID SC{
 	//2. insert to symbol table (manage offset and all this shit).
 	TokenClass* token = dynamic_cast<TokenClass*>($1);
 	symbolsTable.addSymbol(s,TypeInfo(token->typeInfo.type));
+	asmStack.addNewVar(s, symbolsTable);
 }; 
 
 Statement : Type ID ASSIGN Exp SC{
@@ -290,6 +294,7 @@ Statement : Type ID ASSIGN Exp SC{
 	}
 	//3. insert to symbol table (manage offset and all this shit).
 	symbolsTable.addSymbol(s,TypeInfo(token1->typeInfo.type));
+	asmStack.addNewVar(s, symbolsTable, token4->transAux.assignedReg);
 	delete $1;
 	delete $2;
 	delete $4;
@@ -313,6 +318,7 @@ Statement : Type ID LBRACK NUM RBRACK SC{
 	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
 	token1->typeInfo.type = getTypeAsArrType(token1->typeInfo.type);
 	symbolsTable.addSymbol(s,TypeInfo(token1->typeInfo.type, num));
+	asmStack.addNewVar(s, symbolsTable);
 	delete $1;
 	delete $2;
 	delete $4;
@@ -344,6 +350,8 @@ Statement 	: Type ID LBRACK NUM B RBRACK SC{
 	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
 	token1->typeInfo.type = getTypeAsArrType(token1->typeInfo.type);
 	symbolsTable.addSymbol(s,TypeInfo(token1->typeInfo.type, num));
+
+	asmStack.addNewVar(s, symbolsTable);
 	delete $1;
 	delete $2;
 	delete $4;
@@ -389,6 +397,7 @@ Statement : ID ASSIGN Exp SC{
 			errorMismatch(yylineno);
 			exit(1);
 	}
+	asmStack.updateVar(s, symbolsTable, token3->transAux.assignedReg, token3->typeInfo.id);
 };
 
 Statement : ID LBRACK Exp RBRACK ASSIGN Exp SC{
@@ -420,12 +429,20 @@ Statement : ID LBRACK Exp RBRACK ASSIGN Exp SC{
 			errorMismatch(yylineno);
 			exit(1);
 	}
+	string reg3 = token3->transAux.assignedReg;
+	string reg6 = token6->transAux.assignedReg;
+	asmStack.updateArrEntry(s, symbolsTable, reg3, reg6);
 	delete $1;
 	delete $3;
 	delete $6;
 }; 
 
-Statement : Call SC{};
+Statement : Call SC{
+	TokeClass* retExp = new TokenClass(); 
+	retExp->transAux.nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	delete $1;
+	$$ = retExp;
+};
 Statement : RETURN SC{
 	if(funcReturnDataType.type != DATA_VOID){
 		errorMismatch(yylineno);
@@ -1035,17 +1052,17 @@ void yyerror(const char*) {
 }
 
 void printFunctions(){
-	vector<Func> funcsVec = symbolsTable.getFuncs();
+	/*vector<Func> funcsVec = symbolsTable.getFuncs();
 	vector<string> argNameVec;
 	for (vector<Func>::iterator it = funcsVec.begin(); it != funcsVec.end(); ++it) {
 		convertTypeInfoVecToStringVec(it->argsTypes ,argNameVec);
 		cout << it->id << " " << makeFunctionType(it->funcRetVal.getAsString(), argNameVec) << " 0" << endl;
 		argNameVec.clear();
-	}
+	}*/
 }
 
 void printScopeSymbols(){
-	symbolsTable.printCurrentScopeSymbols();
+	//symbolsTable.printCurrentScopeSymbols();
 }
 
 DATA_TYPE getTypeAsArrType(DATA_TYPE type){

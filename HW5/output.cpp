@@ -5,7 +5,7 @@
 using namespace std;
 
 void output::endScope(){
-    cout << "---end scope---" << endl;
+    //cout << "---end scope---" << endl;
 }
 
 void output::printID(const string& id, int offset, const string& type  ){
