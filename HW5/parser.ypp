@@ -523,9 +523,6 @@ Call : ID LPAREN ExpList RPAREN{
 	/*start with jumping to the start of the func (at this point all args calculated): */
 	retToken->transAux.afterExp = CodeBuffer::makelist(codeBuff.emit("j "));
 	//for each argument, if bool, calculate BP part:
-	
-	//TODO:check this loop:
-
 	for (int i = 0; i < expListVec.size(); i++){
 		if (expListVec[i]->typeInfo.type != DATA_BOOL){
 			continue;
@@ -539,27 +536,26 @@ Call : ID LPAREN ExpList RPAREN{
 		if (i != (expListVec.size() - 1)){
 			nextStream.clear();
 			nextStream << "j " << expListVec[i+1]->transAux.startLable;
-			code_buffer.emit(nextStream.str());
+			codeBuff.emit(nextStream.str());
 		} 
 		else {
-			$$.after_exp = CodeBuffer::merge($$.after_exp,CodeBuffer::makelist(code_buffer.emit("j ")));
+			retToken->transAux.afterExp = CodeBuffer::merge(retToken->transAux.afterExp,CodeBuffer::makelist(codeBuff.emit("j ")));
 		}
-		code_buffer.bpatch(exp_global.back()[i].true_list, trueLable);
+		codeBuff.bpatch(expListVec[i]->transAux.trueList, trueLable);
 
+		/* EXACTLY THE SAME CODE ONLY WITH 0 TO THE REG */
 		string falseLabel = codeBuff.genLabel();		//generate false lable for BP purpose.
 		falseStream << "li " << reg << ", 0";			//falseStream = set the reg the value of false.
 		
-		code_buffer.emit(false_code.str());
-		if (i < exp_global.back().size()-1){
-			nextStream.clear();
-			nextStream << "j " << exp_global.back()[i+1].start_exp;
-			code_buffer.emit(nextStream.str());
+		codeBuff.emit(falseStream.str());
+		if (i != (expListVec.size() - 1)){
+			codeBuff.emit(nextStream.str());
 		}
 		else {
-			$$.after_exp = CodeBuffer::merge($$.after_exp,CodeBuffer::makelist(code_buffer.emit("j ")));
+			retToken->transAux.afterExp = CodeBuffer::merge(retToken->transAux.afterExp,CodeBuffer::makelist(codeBuff.emit("j ")));
 		}
 		
-		code_buffer.bpatch(exp_global.back()[i].false_list, falseLabel);
+		codeBuff.bpatch(expListVec[i]->transAux.falseList, falseLabel);
 	}
 	asmCmd.callFuncWithParams(f, expListVec, symbolsTable);
 	for(int i = 0; i < expListVec.size(); i++){
