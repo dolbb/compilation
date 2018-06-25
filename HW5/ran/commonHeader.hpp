@@ -328,6 +328,17 @@ public:
             }
         }
     }
+	
+	int getCurrentScopeSize(){
+		Scope scope = scopes.top();
+		int ret = 0;
+        for (vector<Symbol>::iterator it = scope.symbols.begin(); it != scope.symbols.end(); ++it){
+            if (it->symbolOffset >= 0) {
+				ret += it->typeInfo.size;       	
+			}   
+        }
+		return ret;
+	}
 };
 
 

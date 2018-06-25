@@ -370,30 +370,25 @@ class AssemblyCommands {
 		return (4) * totalArgsOffset;
 	}
 public:	
-	void callFunc() {
-		//int totalArgsOffset = getArgsOffset(argsTypes);
+	void callFunc(Func func) {
+		
+		BP.emit("#----- jumping to function" + func.id );
 		//mgr.storeRegsToStack();
-		//asmStack.saveFP();
-		//asmStack.push(); //for $ra?
-		//totalArgsOffset += 8; //for saved fp + ra
-		//BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
-		
-		
-		
-		//TODO jal to func label
+		asmStack.saveFP();
+		asmStack.push(); //for $ra
+
+		BP.emit("jal " + func.label);
+		BP.emit("#----- finished jumping to function -----");
 		//mgr.loadRegsFromStack();
 	}
 	
 	//Call : ID LPAREN ExpList.argList RPAREN
 	void callFuncWithParams(Func func, vector<TokenClass*> &argList, SymbolsTable &symTable) {
 		BP.emit("#----- jumping to function" + func.id );
-		//int totalArgsOffset = getArgsOffset(argList);
+		
 		//mgr.storeRegsToStack();
 		asmStack.saveFP();
 		asmStack.push(); //for $ra
-		//totalArgsOffset += 8; //for saved fp + ra
-		//BP.emit("subu $fp, $fp, " + toString(totalArgsOffset) + "#push fp");
-		
 	
 		//update stack with arg's values		
 		BP.emit("#----- passing arguments to function -----");
@@ -426,11 +421,28 @@ public:
 		
 		BP.emit("jal " + func.label);
 		BP.emit("#----- finished jumping to function -----");
-		//TODO jal to func label
+	
 		//mgr.loadRegsFromStack();
 	}
 	
+	void functionInit(Func func){
+		BP.emit("move $fp, $sp");
+		int offset = getArgsOffset(func.argsTypes);
+		mgr.storeFromReg("$ra", offset + "($sp)");
+	}
 	
+	void functionEnd(Func func, SymbolsTable &symTable){
+		int offset = symTable.getCurrentScopeSize();
+		asmStack.pop(offset);
+		offset = getArgsOffset(func.argsTypes);
+		asmStack.pop(offset);
+		mgr.storeToReg("$ra", "($sp)");
+		asmStack.pop(1);
+		mgr.storeToReg("$fp", "($sp)");
+		asmStack.pop(1);
+		BP.emit("jr $ra");
+		
+	}
 	
 };
 

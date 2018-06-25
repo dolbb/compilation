@@ -118,10 +118,18 @@ FuncDecl : 	RetType {
 				Func func(id, (dynamic_cast<TokenClass*>($7))->argList, funcReturnDataType);
 				symbolsTable.addFuncSymbol(func);
 				currentFuncId = "";
+				
+				//RAN
+				asmCmd.functionInit(func);
 			}
-	  		RPAREN LBRACE Statements RBRACE EndScope{
+	  		RPAREN LBRACE Statements RBRACE 	{
 	//3. change funcReturnDataType to DATA_INVALID.
 	funcReturnDataType.type = DATA_INVALID; 
+	//RAN
+	string id = (dynamic_cast<String*>($4))->getString();
+	Func func = symbolsTable.getFunc(id);
+	asmCmd.functionEnd(func, symbolsTable);
+	
 };
 
 /*----------RetType---------------------*/
@@ -479,7 +487,20 @@ Statement : RETURN Exp SC{
 			errorMismatch(yylineno);
 			exit(1);
 	}
+	//RAN
+	string reg = token2->transAux.assignedReg;
+	if (token2->typeInfo.type == DATA_BOOL) {
+		//DOLEV
+	}
+	else{
+		codeBuff.emit("move $v0, " + reg);
+		mgr.freeReg(reg);
+	}
+	
+	
+	
 	delete $2;
+	
 };
 
 Statement : IF LPAREN ExpBoolValid ScopedStatment OptionalElse{};

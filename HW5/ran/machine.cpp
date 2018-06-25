@@ -52,7 +52,8 @@ void functionArgs(){
 	asmStack.addNewVar("x",symbolsTable);
 	symbolsTable.addArgSymbol("y", TypeInfo(DATA_INT, 1) );
 	asmStack.addNewVar("y",symbolsTable);
-	symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 1) );
+	symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 5) );
+	symbolsTable.addSymbol("s", TypeInfo(DATA_INT, 5) );
 	asmStack.addNewVar("y",symbolsTable);
 	
 	string reg1 = mgr.getReg();
@@ -67,9 +68,12 @@ void functionArgs(){
 	std::cout << "reg3 is z" << reg3 << std::endl;
 	mgr.storeToRegImm(reg3, 3);
 	
-	asmStack.updateVar("x",symbolsTable,reg1); 
-	asmStack.updateVar("y",symbolsTable,reg2); 
-	asmStack.updateVar("z",symbolsTable,reg3); 
+	//asmStack.updateVar("x",symbolsTable,reg1); 
+	//asmStack.updateVar("y",symbolsTable,reg2); 
+	//asmStack.updateVar("z",symbolsTable,reg3); 
+	
+	std::cout << "offfffset is " << symbolsTable.getCurrentScopeSize() << std::endl;
+	
 }
 
 void callFunc(){
@@ -89,7 +93,7 @@ void callFunc(){
 	vector<TypeInfo> args;
 	
 	TypeInfo type1 = TypeInfo(DATA_INT);
-	type1.reg = reg1;
+	//type1.reg = reg1;
 		
 	TypeInfo type2 = TypeInfo(DATA_INT,3);
 	type2.id = "x";
@@ -98,7 +102,7 @@ void callFunc(){
 	asmStack.updateArrEntry("x",symbolsTable,reg1,reg2); //x[2]=9
 	
 	TypeInfo type3 = TypeInfo(DATA_INT);
-	type3.reg = reg3;
+	//type3.reg = reg3;
 	
     args.push_back(type1);
 	args.push_back(type2);
@@ -128,7 +132,7 @@ void callFuncWithParams(){
 int main(){
 	symbolsTable.addScope();
 	
-	callFunc();
+	functionArgs();
 	//functionArgs();
 	//updateArr();
 	//symbolsTable.addScope();
