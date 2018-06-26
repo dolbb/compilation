@@ -23,6 +23,11 @@ using namespace std;
 
 int currentReg = FIRST_REGISTER;
 int regs[18] = {0};
+int dataLabelIndex = 1;
+string divErrorMessage = "Error division by zero\\n";
+string indexErrorMessage = "Error index out of bounds\\n";
+string divErrorHanlingLabel = "divErrorFunc";
+string indexErrorHanlingLabel = "arrErrorFunc";
 
 string toString(int num)
 {
@@ -121,6 +126,9 @@ public:
 	void storeToRegImm(string reg, int value){
 		doRegOp("li", reg, toString(value));		
 	}
+	void loadAddressToReg(string reg, string label){
+		doRegOp("la", reg, label);	
+	}
 	//should be used when calling a function
 	void storeRegsToStack(){
 		BP.emit("#------ saving registers to stack ------");
@@ -149,6 +157,7 @@ public:
 	
 	
 	void print(){
+		BP.printDataBuffer();
 		BP.printCodeBuffer();
 	}
 };
@@ -173,7 +182,18 @@ public:
 		handleByte(regLeftRes, isB);
 	}
 	void divide(string regLeftRes, string regRight, bool isB = 0){
-		//TODO - check for DIVIEBYZERO
+		
+		//division by zero
+		vector<int> trueList = BP.makelist(BP.emit("bnez " + regRight + ", "));
+		string reg = mgr.getReg();
+		mgr.loadAddressToReg(reg,"divErrorMessage"); 
+		mgr.storeFromReg(reg, "($sp)");
+		BP.emit("j " + divErrorHanlingLabel);
+		string nextLabel = BP.genLabel();
+		BP.bpatch(trueList, nextLabel);
+		mgr.freeReg(reg);
+		
+		
 		BP.emit("div " + regLeftRes + "," + regRight);
 		BP.emit("mflo " + regLeftRes);
 		handleByte(regLeftRes, isB);
@@ -212,10 +232,18 @@ class AssemblyStack {
 		string tmpReg = mgr.getReg();
 		mgr.storeToRegImm(tmpReg, size - 1); //since index starts from 0
 		
-		BP.emit("bgt " + regArrIndex +"," + tmpReg+",array_out_of_bound"); //TODO - add this label
+		string errReg = mgr.getReg();
+		mgr.loadAddressToReg(errReg,"indexErrorMessage"); 
+		push();
+		mgr.storeFromReg(errReg, "($sp)");
+		
+		BP.emit("bgt " + regArrIndex +"," + tmpReg+","+indexErrorHanlingLabel); //TODO - add this label
 		mgr.storeToRegImm(tmpReg, 0);
-		BP.emit("blt " + regArrIndex +"," + tmpReg+",array_out_of_bound");
+		BP.emit("blt " + regArrIndex +"," + tmpReg+","+indexErrorHanlingLabel);
+		
+		pop(1);
 		mgr.freeReg(tmpReg);
+		mgr.freeReg(errReg);
 	}
 public:
 	void push(){
@@ -444,6 +472,69 @@ public:
 		
 	}
 	
+	string generateDataLine(string s){
+		std::stringstream label;
+		label << "Dlabel_" << toString(dataLabelIndex);
+		string ret(label.str());
+		label << ": .asciiz \"" + s + "\"";
+		BP.emitData(label.str());
+		dataLabelIndex++;
+		return ret;	
+	}
+	
+	//will be called from EXP -> STRING in parser
+	string saveStringInDataSection(string s){
+		string label = generateDataLine(s);
+		string reg = mgr.getReg();
+		mgr.loadAddressToReg(reg,label);
+		return reg;
+	}
+
+	//will  be called in the begining of compilation
+	void generateDivError(){
+		BP.emitData("divErrorMessage: .asciiz \"" + divErrorMessage + "\"");
+		//write "printdiverror" function:
+		generateLabelByName(divErrorHanlingLabel);
+		BP.emit("jal printFunc");
+		BP.emit("li $v0, 10");
+		BP.emit("syscall");
+	}
+	
+	void generateIndexError(){
+		BP.emitData("indexErrorMessage: .asciiz \"" + indexErrorMessage + "\"");
+		//write "printindexerror" function:
+		generateLabelByName(indexErrorHanlingLabel);
+		BP.emit("jal printFunc");
+		BP.emit("li $v0, 10");
+		BP.emit("syscall");
+	}
+
+	void generateLabelByName(string name){
+		std::stringstream label;
+		label << name;
+		label << ":";
+		BP.emit(label.str());
+	}
+
+	void initializeProg(){
+		
+		generateDivError();
+		generateIndexError();
+		
+		BP.emit("printFunc:");
+		BP.emit("lw $a0, 0($sp)"); 
+		BP.emit("li $v0, 4");
+		BP.emit("syscall");
+		BP.emit("jr $ra");
+		
+		BP.emit("printiFunc:");
+		BP.emit("lw $a0, 0($sp)"); 
+		BP.emit("li $v0, 1");
+		BP.emit("syscall");
+		BP.emit("jr $ra");
+		
+		BP.emit("main:");
+	}
 };
 
 

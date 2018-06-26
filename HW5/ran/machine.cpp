@@ -13,6 +13,7 @@ RegisterManager mgr;
 AssemblyCommands asem;
 SymbolsTable symbolsTable;
 AssemblyStack asmStack;
+AssemblyArithmeticCommands arith;
 
 
 void updateArr(){
@@ -52,8 +53,7 @@ void functionArgs(){
 	asmStack.addNewVar("x",symbolsTable);
 	symbolsTable.addArgSymbol("y", TypeInfo(DATA_INT, 1) );
 	asmStack.addNewVar("y",symbolsTable);
-	symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 5) );
-	symbolsTable.addSymbol("s", TypeInfo(DATA_INT, 5) );
+	symbolsTable.addSymbol("z", TypeInfo(DATA_INT, 1) );
 	asmStack.addNewVar("y",symbolsTable);
 	
 	string reg1 = mgr.getReg();
@@ -68,11 +68,11 @@ void functionArgs(){
 	std::cout << "reg3 is z" << reg3 << std::endl;
 	mgr.storeToRegImm(reg3, 3);
 	
-	//asmStack.updateVar("x",symbolsTable,reg1); 
-	//asmStack.updateVar("y",symbolsTable,reg2); 
-	//asmStack.updateVar("z",symbolsTable,reg3); 
+	asmStack.updateVar("x",symbolsTable,reg1); 
+	asmStack.updateVar("y",symbolsTable,reg2); 
+	asmStack.updateVar("z",symbolsTable,reg3); 
 	
-	std::cout << "offfffset is " << symbolsTable.getCurrentScopeSize() << std::endl;
+	
 	
 }
 
@@ -128,13 +128,29 @@ void callFuncWithParams(){
 	
 }
 
+void divide(){
+	string reg1 = mgr.getReg();
+	//std::cout << "reg1 is " << reg1 << std::endl;
+	mgr.storeToRegImm(reg1, 2);
+	
+	string reg2 = mgr.getReg();
+	//std::cout << "reg2 is " << reg2 << std::endl;
+	mgr.storeToRegImm(reg2, 0);
+	
+	arith.divide(reg1,reg2,false);
+}
 
 int main(){
+	asem.initializeProg();
 	symbolsTable.addScope();
 	
-	functionArgs();
+	//divide();
+	
+	//callFunc();
 	//functionArgs();
 	//updateArr();
+	
+	asem.saveStringInDataSection("blahh");
 	//symbolsTable.addScope();
 	
 	//symbolsTable.addSymbol("x", TypeInfo(DATA_INT, 1) );

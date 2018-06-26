@@ -27,7 +27,7 @@
 	/*	translation addition: 			*/
 	CodeBuffer& codeBuff = CodeBuffer::instance();
 	RegisterManager mgr;
-	int numOfStrings = 0;
+	int dataLabelIndex = 1;
 	vector<TokenClass*> expListVec;
 
 	/*	local functions:				*/
@@ -93,7 +93,7 @@
 			section 2.2	-	rules	
 ========================================================*/
 /*----------Program---------------------*/
-Program 	: Funcs{};
+Program 	: {asmCmd.initializeProg();} Funcs{};
 
 /*----------Funcs-----------------------*/
 Funcs 		: %empty /*epsilon*/{};
@@ -782,17 +782,13 @@ Exp : NUM B{
 
 Exp : STRING{
 	TokenClass* token = new TokenClass(TypeInfo(DATA_STRING));	//generate a returned token.
-	String* inputString = dynamic_cast<String*>($1);			//save the input token.
-	string reg = mgr.getReg();
-	token->transAux.assignedReg = reg;							//save the assigned register's index.
-	stringstream dataStream;									//init all the prints:
-	stringstream textStream;
-	dataStream << "labal_data_" << numOfStrings++;
-	textStream << "la " << reg << ", " << dataStream.str();		//put only the data lable in the text stream, at the load command.
-	dataStream <<": .asciiz " << inputString->getString();		//add the string to its definition at the data section.
+	String* inputString = dynamic_cast<String*>($1);			//save the input token.				
+	
+	string str = inputString->getString();
+	token->transAux.assignedReg = asmCmd.saveStringInDataSection(str);
+
 	token->transAux.startLable = codeBuff.genLabel();			//generate a new lable.
-	codeBuff.emitData(dataStream.str());						//save to the data buffer.
-	codeBuff.emit(textStream.str());							//save to the text buffer.
+	
 	delete $1;													//clean allocated memory.
 	$$ = token;													//save the generated token.
 };
