@@ -8,10 +8,10 @@
 #include <map>
 #include <stack>
 #include <cstdlib>
-#include "output.hpp"
+//#include "output.hpp"
 
 using namespace std;
-using namespace output;
+//using namespace output;
 using std::string;
 using std::map;
 using std::vector;
@@ -118,13 +118,10 @@ struct TypeInfo {
 struct TranslationAux{
     string assignedReg;
     string quad;
-    string startLable;
+    string startLabel;
     vector<int> trueList;
     vector<int> falseList;
     vector<int> nextList;
-    vector<int> breakList;
-    vector<string> valueList;
-    vector<string> quadList;
     vector<int> afterExp;
 };
 
@@ -314,6 +311,7 @@ public:
     }
 
     void printCurrentScopeSymbols(){
+        /*
         Scope scope = scopes.top();
         for (vector<Symbol>::iterator it = scope.symbols.begin(); it != scope.symbols.end(); ++it){
             DATA_TYPE type = it->typeInfo.type;
@@ -327,6 +325,17 @@ public:
                 printID(it->id, it->symbolOffset, typeStr);
             }
         }
+        */
+    }
+    int getCurrentScopeSize(){
+        Scope scope = scopes.top();
+        int ret = 0;
+        for (vector<Symbol>::iterator it = scope.symbols.begin(); it != scope.symbols.end(); ++it){
+            if (it->symbolOffset >= 0) {
+                ret += it->typeInfo.size;           
+            }   
+        }
+        return ret;
     }
 };
 
@@ -352,6 +361,13 @@ public:
     TokenClass(TypeInfo inTypeInfo){
        typeInfo = inTypeInfo; 
     }
+};
+
+class StatementClass : public Node{
+public:
+    string start;
+    vector<int> breakList;
+    vector<int> nextList;
 };
 
 class String : public Node {

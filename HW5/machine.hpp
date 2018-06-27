@@ -38,25 +38,16 @@ string toString(int num)
 
 int toInt(char const *s)
 {
-     if ( s == NULL || *s == '\0' )
-        throw std::invalid_argument("null or empty string argument");
-
      bool negate = (s[0] == '-');
-     if ( *s == '+' || *s == '-' ) 
-         ++s;
-
-     if ( *s == '\0')
-        throw std::invalid_argument("sign character only.");
-
+     if ( *s == '+' || *s == '-' ) {
+        ++s;
+     }
      int result = 0;
      while(*s)
      {
-          if ( *s >= '0' && *s <= '9' )
-          {
-              result = result * 10  - (*s - '0');  //assume negative number
+          if ( *s >= '0' && *s <= '9' ){
+            result = result * 10  - (*s - '0');  //assume negative number
           }
-          else
-              throw std::invalid_argument("invalid input string");
           ++s;
      }
      return negate ? result : -result; //-result is positive!
@@ -382,7 +373,10 @@ public:
 		BP.emit("#--- finished storing fp on stack ---");
 	}
 	
-	
+	void popScopeVars(SymbolsTable &symTable){
+		int offset = symTable.getCurrentScopeSize();
+		pop(offset);
+	}
 	
 };
 
@@ -394,7 +388,6 @@ class AssemblyCommands {
 		for (vector<TypeInfo>::iterator it = argsTypes.begin(); it != argsTypes.end(); ++it) {
 			totalArgsOffset += (*it).size;
 		}
-		std::cout << "size is " << totalArgsOffset << std::endl;
 		return (4) * totalArgsOffset;
 	}
 public:	
