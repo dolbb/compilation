@@ -138,6 +138,11 @@ struct Func{
 		id = inId;
         argsTypes = inArgsVec;
         funcRetVal = retVal;
+        if(id == "main"){
+            label = "main2";
+        }else{
+            label = "_" + id + "_";
+        }
     }
 };
 
@@ -328,6 +333,9 @@ public:
         */
     }
     int getCurrentScopeSize(){
+        if(scopes.size() == 0){
+            return 0;
+        }
         Scope scope = scopes.top();
         int ret = 0;
         for (vector<Symbol>::iterator it = scope.symbols.begin(); it != scope.symbols.end(); ++it){

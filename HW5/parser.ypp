@@ -124,14 +124,18 @@ FuncDecl : 	RetType {
 				//RAN
 				asmCmd.functionInit(func);
 			}
-	  		RPAREN LBRACE Statements RBRACE 	{
+	  		RPAREN LBRACE Statements RBRACE EndScope M{
 	//3. change funcReturnDataType to DATA_INVALID.
 	funcReturnDataType.type = DATA_INVALID; 
 	//RAN
 	string id = (dynamic_cast<String*>($4))->getString();
 	Func func = symbolsTable.getFunc(id);
 	asmCmd.functionEnd(func, symbolsTable);
-	
+
+	//TODO: check how to stop the loop
+	StatementClass* statement = dynamic_cast<StatementClass*>($11);
+	TokenClass* m = dynamic_cast<TokenClass*>($14);
+	codeBuff.bpatch(statement->nextList, m->transAux.quad);
 };
 
 /*----------RetType---------------------*/
@@ -274,6 +278,7 @@ Statements : Statements Statement{
 
 	retStatement->start = leftStatements->start;
 	codeBuff.bpatch(leftStatements->nextList, rightStatement->start);
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::merge(rightStatement->nextList, CodeBuffer::makelist(codeBuff.emit("j ")));
 	$$ = retStatement;
 };
@@ -294,6 +299,7 @@ Statement : Type ID SC{
 	symbolsTable.addSymbol(s,TypeInfo(token->typeInfo.type));
 	asmStack.addNewVar(s, symbolsTable);
 	delete $2;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 }; 
@@ -331,6 +337,7 @@ Statement : Type ID ASSIGN Exp SC{
 	delete $1;
 	delete $2;
 	delete $4;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 }; 
@@ -360,6 +367,7 @@ Statement : Type ID LBRACK NUM RBRACK SC{
 	delete $1;
 	delete $2;
 	delete $4;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 };
@@ -397,6 +405,7 @@ Statement 	: Type ID LBRACK NUM B RBRACK SC{
 	delete $1;
 	delete $2;
 	delete $4;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 };
@@ -446,6 +455,7 @@ Statement : ID ASSIGN Exp SC{
 	asmStack.updateVar(s, symbolsTable, token3->transAux.assignedReg, token3->typeInfo.id);
 	delete $1;
 	delete $3;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 };
@@ -489,6 +499,7 @@ Statement : ID LBRACK Exp RBRACK ASSIGN Exp SC{
 	delete $1;
 	delete $3;
 	delete $6;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 }; 
@@ -497,6 +508,7 @@ Statement : Call SC{
 	StatementClass* retStatement = new StatementClass();
 	retStatement->start = (dynamic_cast<TokenClass*>($1))->transAux.startLabel;
 	delete $1;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 };
@@ -511,8 +523,8 @@ Statement : RETURN SC{
 
 	Func func = symbolsTable.getFunc(currentFuncId);
 	asmCmd.functionEnd(func, symbolsTable);
-
-	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	// codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	// retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 };
 
@@ -553,6 +565,7 @@ Statement : RETURN Exp SC{
 	if (token2->typeInfo.type == DATA_BOOL) {
 		string trueLable = codeBuff.genLabel();		//generate true lable for BP purpose.
 		codeBuff.emit("li $v0, 1");					//save 1 (true) into the reg as said in trueStream.
+		codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 		vector<int> nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 		string falseLabel = codeBuff.genLabel();	//generate true lable for BP purpose.
 		codeBuff.emit("li $v0, 0");					//save 1 (true) into the reg as said in trueStream.
@@ -577,7 +590,8 @@ Statement : RETURN Exp SC{
 	asmCmd.functionEnd(func, symbolsTable);
 
 	delete $2;
-	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	// codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	// retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 };
 
@@ -595,6 +609,7 @@ Statement : IF M LPAREN ExpBoolValid ScopedStatment N OptionalElse M{
 	codeBuff.bpatch(condition->transAux.trueList, statement1->start);
 	codeBuff.bpatch(condition->transAux.falseList, statement2->start);
 	codeBuff.bpatch(n->transAux.nextList, m2->transAux.quad);
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = retStatement;
 	delete $2;
@@ -627,6 +642,7 @@ Statement : WHILE LPAREN M ExpBoolValid {
 	codeBuff.bpatch(n->transAux.nextList, m1->transAux.quad);
 	statement->start  = m1->transAux.quad;						//set starting label using the first M marker.
 	statement->breakList.clear();
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	statement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = statement;
 	statementStack.pop();	
@@ -648,7 +664,9 @@ Statement : BREAK SC{
 	StatementClass* statement = new StatementClass();
 	statement->start = codeBuff.genLabel();
 	/*make a jump and save it in the break list:*/
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	statementStack.top()->breakList = CodeBuffer::merge(statementStack.top()->breakList, CodeBuffer::makelist(codeBuff.emit("j ")));
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	statement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
 	$$ = statement;
 };
@@ -692,16 +710,16 @@ Call : ID LPAREN M ExpList RPAREN{
 	string s = (dynamic_cast<String*>($1))->getString();
 	verifyFunctionPresent(s);
 	Func f = getFuncFromTable(s);
-	TokenClass* token3 = dynamic_cast<TokenClass*>($4);
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);
 	vector<string> tmpArgVec;
 	convertTypeInfoVecToStringVec(f.argsTypes, tmpArgVec);
-	if(f.argsTypes.size() != token3->argList.size()){
+	if(f.argsTypes.size() != token4->argList.size()){
 		errorPrototypeMismatch(yylineno, s, tmpArgVec);
 		exit(1);
 	}
 	for(int i=0 ; i < f.argsTypes.size() ; ++i){
-		if(f.argsTypes[i] != token3->argList[i]){
-			if(f.argsTypes[i].type != DATA_INT || token3->argList[i].type != DATA_BYTE){
+		if(f.argsTypes[i] != token4->argList[i]){
+			if(f.argsTypes[i].type != DATA_INT || token4->argList[i].type != DATA_BYTE){
 				errorPrototypeMismatch(yylineno, s, tmpArgVec);
 				exit(1);
 			}
@@ -710,6 +728,7 @@ Call : ID LPAREN M ExpList RPAREN{
 	//start of HW5 part:
 	TokenClass* retToken = new TokenClass(f.funcRetVal);
 	/*start with jumping to the start of the func (at this point all args calculated): */
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	retToken->transAux.afterExp = CodeBuffer::makelist(codeBuff.emit("j "));
 	//for each argument, if bool, calculate BP part:
 	for (int i = 0; i < expListVec.size(); i++){
@@ -725,9 +744,11 @@ Call : ID LPAREN M ExpList RPAREN{
 		if (i != (expListVec.size() - 1)){
 			nextStream.clear();
 			nextStream << "j " << expListVec[i+1]->transAux.startLabel;
+			codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 			codeBuff.emit(nextStream.str());
 		} 
 		else {
+			codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 			retToken->transAux.afterExp = CodeBuffer::merge(retToken->transAux.afterExp,CodeBuffer::makelist(codeBuff.emit("j ")));
 		}
 		codeBuff.bpatch(expListVec[i]->transAux.trueList, trueLable);
@@ -741,6 +762,7 @@ Call : ID LPAREN M ExpList RPAREN{
 			codeBuff.emit(nextStream.str());
 		}
 		else {
+			codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 			retToken->transAux.afterExp = CodeBuffer::merge(retToken->transAux.afterExp,CodeBuffer::makelist(codeBuff.emit("j ")));
 		}
 		
@@ -1025,6 +1047,7 @@ M 	: %empty /*epsilon*/{
 
 N 	: %empty /*epsilon*/{
 	TokenClass* token = new TokenClass();									//generate token.
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	token->transAux.nextList = CodeBuffer::makelist(codeBuff.emit("j "));	//generate a jump command and set into nextList to complete it later.
 	$$ = token;																//save the token to be returned.
 };
@@ -1036,6 +1059,7 @@ N 	: %empty /*epsilon*/{
 TokenClass* basicBoolPrint(bool isTrue){
 	TokenClass* token = new TokenClass(TypeInfo(DATA_BOOL));			//save the input token.
 	token->transAux.startLabel = codeBuff.genLabel(); 					//generate starting point.
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	int jumpAddress = codeBuff.emit("j ");								//create a new jumping point.
 	if(isTrue){
 		token->transAux.trueList = CodeBuffer::makelist(jumpAddress);	//save it's address in the list.
@@ -1051,6 +1075,7 @@ void checkBoolAndGenPrint(TokenClass* token, string reg){
 		stringstream branchStream;
 		branchStream << "beq " << reg << ", 1, ";				
 		token->transAux.trueList = CodeBuffer::makelist(codeBuff.emit(branchStream.str()));
+		codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 		token->transAux.falseList = CodeBuffer::makelist(codeBuff.emit("j "));
 		mgr.freeReg(reg);					//in this case no need to save the bool value in the reg, so release it.
 		token->transAux.assignedReg = "";	//delete reg from token.
@@ -1069,6 +1094,7 @@ void relOpPrint(string op, TokenClass* resTok, string leftReg, string rightReg){
 	stringstream command;
 	command << op << leftReg << ", " << rightReg << ", ";
 	resTok->transAux.trueList = CodeBuffer::makelist(codeBuff.emit(command.str()));
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
 	resTok->transAux.falseList = CodeBuffer::makelist(codeBuff.emit("j "));
 	mgr.freeReg(leftReg);
 	mgr.freeReg(rightReg);
@@ -1276,6 +1302,7 @@ int main() {
 	//end of global scope
 	endScope();   
 	printFunctions();
+	mgr.print();
 	
 	return 0;
 }

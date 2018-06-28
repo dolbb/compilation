@@ -98,6 +98,7 @@ public:
 		return toRegString(reg);
 	}
 	void freeReg(string reg){
+		if (reg == "") return;
 		int regNum = getRegFromString(reg);	
 		//cout << "\033[1;31mfreeing reg \033[0m" << regNum << endl;
 		#ifdef DEBUG
@@ -241,6 +242,7 @@ public:
 		BP.emit("subu $sp, $sp, 4 #push stack");
 	}
 	void pop(int size) {
+		if (size == 0) return;
 		BP.emit("addu $sp, $sp, " + toString(4*size) + " #popping " + toString(size) +" items");
 	}
 	//should be used when declaring a new var 
@@ -373,7 +375,7 @@ public:
 		BP.emit("#--- finished storing fp on stack ---");
 	}
 	
-	void popScopeVars(SymbolsTable &symTable){
+	void popScopeVars(SymbolsTable symTable){
 		int offset = symTable.getCurrentScopeSize();
 		pop(offset);
 	}
@@ -447,6 +449,7 @@ public:
 	}
 	
 	void functionInit(Func func){
+		generateLabelByName(func.label);
 		BP.emit("move $fp, $sp");
 		int offset = getArgsOffset(func.argsTypes);
 		mgr.storeFromReg("$ra", offset + "($sp)");
@@ -514,6 +517,7 @@ public:
 		generateDivError();
 		generateIndexError();
 		
+		BP.emit("#Initializtion-----------------------");
 		BP.emit("printFunc:");
 		BP.emit("lw $a0, 0($sp)"); 
 		BP.emit("li $v0, 4");
@@ -526,7 +530,11 @@ public:
 		BP.emit("syscall");
 		BP.emit("jr $ra");
 		
+		asmStack.push();
+		asmStack.push();
 		BP.emit("main:");
+		BP.emit("j main2");
+		BP.emit("#Finished Initializtion--------------");
 	}
 };
 
