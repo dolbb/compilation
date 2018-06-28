@@ -1,0 +1,4 @@
+bool main(){
+	return true;
+	// main has to have return type void, not bool
+}

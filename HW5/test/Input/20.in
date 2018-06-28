@@ -1,0 +1,78 @@
+// test function that returns bool
+
+bool foo1()
+{
+	return true;
+}
+
+bool foo2()
+{
+	return false;
+}
+
+bool foo3(bool x)
+{
+	return x;
+}
+
+bool foo4(bool x, bool y)
+{
+	return not x and y;
+}
+
+void bar1(bool x)
+{
+	if (x)
+		print("True\n");
+	else
+		print("False\n");
+}
+
+bool bar2(bool x) // bool function not retuning anything !
+{
+	if (x)
+		print("True\n");
+	else
+		print("False\n");
+}
+void main()
+{
+	bar1(foo1());
+	bar1(foo2());
+	bar1(foo3(true));
+	bar1(foo3(false));
+	bar1(foo4(false, true));
+	bar1(foo4(false, false));
+	
+	
+	bool x = foo1();
+	bar1(x);
+	x = foo2();
+	bar1(x);
+	
+	print("=====================\n");
+	
+	
+	
+	bar2(foo1());
+	bar2(foo2());
+	bar2(foo3(true));
+	bar2(foo3(false));
+	bar2(foo4(false, true));
+	bar2(foo4(false, false));
+	
+	
+	x = foo1();
+	bar2(x);
+	x = foo2();
+	bar2(x);
+	
+	print("=====================\n");
+	
+	// should do nothing
+	foo1();
+	foo2();
+	foo3(true);
+	foo3(false);
+	foo4(true,false);
+}

@@ -1,0 +1,6 @@
+void main(){
+	if(7 b){
+		return;
+	}
+	// If expects a bool
+}

@@ -1,0 +1,8 @@
+void f(){
+	return;
+}
+
+void f(int x){
+	return;
+	// I am also an f? But there can be only one :O
+}

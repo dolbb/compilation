@@ -1,0 +1,19 @@
+// bools initialize to false
+
+void main()
+{
+	bool a;
+	if (a)
+		print("Should not get here\n");
+	
+	bool x[10];
+	int i = 0;
+	
+	
+	while (i < 10)
+	{
+		if (x[i])
+			print("Should not get here\n");
+		i = i + 1;
+	}
+}

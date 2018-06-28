@@ -1,0 +1,7 @@
+void main(){
+	bool a = (not true);
+	bool c = (not false);
+	bool d = (not not true);
+	bool e = (not not false);
+	bool f = (not (not (not (not (not (not (not (not false))))))));
+}

@@ -1,0 +1,6 @@
+// test print and printi
+void main()
+{
+	print("Hello world\n");
+	printi(1337);	
+}

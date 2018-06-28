@@ -1,0 +1,6 @@
+void main(){
+	byte x;
+	int y;
+	int w = (x * y);
+	byte z = (x / y); // This is illegal :)	
+}

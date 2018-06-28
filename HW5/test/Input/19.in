@@ -1,0 +1,21 @@
+// play with bool on stack
+
+
+void main()
+{
+	bool x;
+	bool y = x;
+	bool z = y;
+	
+	if (z)
+		print("shouldnt get here\n");
+	
+	
+	x = true;
+	y = x;
+	z = y;
+	if (not z)
+		print("shouldnt get here\n");
+	
+	
+}

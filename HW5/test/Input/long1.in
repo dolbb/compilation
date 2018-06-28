@@ -1,0 +1,13 @@
+// check that we remove variables from the stack in a while scope
+
+
+void main()
+{
+	int i = 0;
+	while (i < 42)
+	{
+		int x; // check that this does not destroy the stack
+		i = i + 1;
+	}
+	print("GREAT SUCCESS\n");
+}

@@ -1,0 +1,3 @@
+void b(int abraCadabra){
+	return; // Illegal, part of byte
+}

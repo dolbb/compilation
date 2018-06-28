@@ -1,0 +1,4 @@
+void main(){
+	int x = (16 b * 16 b);
+	int y = x / x;
+}

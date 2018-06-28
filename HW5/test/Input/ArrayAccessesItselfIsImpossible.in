@@ -1,0 +1,4 @@
+void main(){
+	int x[80];
+	x[42] = x; // We can't assign x (an array) to an int
+}

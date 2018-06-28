@@ -1,0 +1,10 @@
+void main(){
+	while(true){
+		break;
+		print("Mission failed :(\n");
+		while(true){
+			break;
+		}
+		break;
+	}
+}

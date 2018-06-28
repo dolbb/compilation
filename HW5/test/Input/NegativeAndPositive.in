@@ -1,0 +1,26 @@
+bool negative(){
+	return false;
+}
+
+bool positive(){
+	return true;
+}
+
+void main(){
+	if(negative())
+		print("Positive");
+	else
+		print("Negative");
+	print("\n");
+	if(negative())
+		print("Positive");
+	print("\n");
+	if(positive())
+		print("Positive");
+	else
+		print("Negative");
+	print("\n");
+	if(positive())
+		print("Positive");
+	print("\n");
+}

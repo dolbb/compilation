@@ -1,0 +1,3 @@
+void main(){
+	return main(); // Should be illegal, because return Exp SC should be used only in methods that don't return void
+}

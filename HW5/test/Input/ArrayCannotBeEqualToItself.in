@@ -1,0 +1,11 @@
+void main(){
+	int x[8];
+	x = x;
+	int z = x[x[x[x[1]]]];
+	x[x[x[x[1]]]] = z+2;
+}
+
+void fun(){
+	int x[8] = x;
+	return;
+}

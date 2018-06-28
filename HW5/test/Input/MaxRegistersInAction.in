@@ -1,0 +1,35 @@
+void printResult(int value){
+	printi(value);
+	print("\n");
+}
+
+
+void main(){
+	// Maximum registers in action ;)
+	int sum = 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + ( 1 + 1 )))))))))))));
+	int mul = 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * ( 1 * 1 )))))))))))));
+	int sub = 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - ( 0 - 0 )))))))))))));
+	int div = 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / ( 1 / 1 )))))))))))));
+	// Now we use lazy, yet smart bpatching that can use more than 15 values :)
+	printResult(7 / 3); // Should be 2 :)
+	printResult(7 / 3 b); // should be 2 :)
+	bool anding = true and ( true and ( true and ( true and ( true and ( 
+				  true and ( true and ( true and ( true and ( true and (
+				  true and ( true and ( true and ( true and ( true and (
+				  true and ( true and ( true and ( true and ( true and (
+				  false ))))))))))))))))))));
+	bool oring =  false or ( false or ( false or ( false or ( false or (
+				  false or ( false or ( false or ( false or ( false or ( 
+				  false or ( false or ( false or ( false or ( false or ( 
+				  false or ( false or ( false or ( false or ( false or ( 
+				  true ))))))))))))))))))));
+
+	printResult(sum);
+	printResult(mul);
+	printResult(sum);
+	printResult(sum);
+	if(not anding)
+		print("21 values in boolean tree is okay :)\n");
+	if(oring)
+		print("21 values in boolean tree is okay :)\n");
+}

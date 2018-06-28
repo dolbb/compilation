@@ -1,0 +1,28 @@
+// misc
+
+int modulo(int x, int m)
+{
+	return x - x / m * m;
+}
+
+void main()
+{
+	int x = 2 - 1 - 1; // should be 0, not (2 - ( 1 - 1))
+	if (x != 0)
+		print("I have a wrong order of operators\n");
+	
+	int i = 0;
+	int res = 0;
+	while (i <= 10)
+	{
+		if (modulo(i,3) != res)
+			print("Should not get here\n");
+		
+		i = i + 1;
+		
+		res = res + 1;
+		if (res == 3)
+			res = 0;
+	}
+}
+

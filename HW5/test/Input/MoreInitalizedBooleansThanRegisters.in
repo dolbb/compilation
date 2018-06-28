@@ -1,0 +1,27 @@
+void main(){
+	bool a = true;
+	bool c = true;
+	bool d = true;
+	bool e = true;
+	bool f = true;
+	bool g = true;
+	bool h = true;
+	bool i = true;
+	bool j = true;
+	bool k = true;
+	bool l = true;
+	bool m = true;
+	bool n = false;
+	bool o = true;
+	bool p = false;
+	bool q = true;
+	bool r = true;
+	bool s = true;
+	bool t = true;
+	bool u = true;
+	bool v = true;
+	bool w = true;
+	bool x = true;
+	bool y = true;
+	bool z = true;
+}

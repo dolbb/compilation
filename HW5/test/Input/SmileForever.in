@@ -1,0 +1,7 @@
+void main(){
+	while(true)
+		print(":)\n");
+	while(false){
+		print("You can't get here :O");
+	}
+}

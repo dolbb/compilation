@@ -1,0 +1,4 @@
+void main(){
+	int name = 3;
+	print(name);
+}

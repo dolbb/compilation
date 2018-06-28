@@ -1,0 +1,1 @@
+line 6: variable foo is not defined

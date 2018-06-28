@@ -1,0 +1,23 @@
+void a(){
+	int x[1];
+}
+
+void c(){
+	bool x[2];
+}
+
+void d(){
+	int x[42];
+}
+
+void e(){
+	byte x[60];
+}
+
+void f(){
+	bool x[255];
+}
+
+void g(){
+	int x[256];
+}

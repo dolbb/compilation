@@ -1,0 +1,6 @@
+void main(){
+	byte x;
+	byte y;
+	int w = (x - y);
+	byte z = (x + y); // This is legal :)	
+}

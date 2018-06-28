@@ -1,0 +1,9 @@
+void main(){
+	while(true){
+		if(false){
+			break;
+		}
+		else
+			break;
+	}
+}

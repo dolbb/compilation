@@ -1,0 +1,17 @@
+void advanceTogether(int x,int y){
+	int exitRule = 9 - 100;
+	if(x + y < exitRule){
+		printi(x);
+		print(",");
+		printi(y);
+	}
+	else{
+		x = x - 1;
+		y = y - 2;
+		advanceTogether(y, x);
+	}
+}
+
+void main(){
+	advanceTogether(0, 0);
+}

@@ -1,0 +1,6 @@
+void main(){
+	int a[21];
+	int x = 4 + 8 * 2;
+	a[x] = 0;
+	// If you have the correct associatives , then result of x should be 20, and not 24... So results should be different on output ;)
+}

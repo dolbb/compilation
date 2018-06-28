@@ -1,0 +1,23 @@
+void a(){
+	print("a");
+}
+
+void c(int d,bool e,byte f[7]){
+	return;
+}
+
+void main(){
+	return;
+}
+
+int d(){
+	return 3;
+}
+
+bool e(){
+	return true;
+}
+
+byte f(){
+	return 7     b;
+}

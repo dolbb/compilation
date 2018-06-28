@@ -1,0 +1,38 @@
+// playing around with bool
+
+void f(bool x)
+{
+	if (x)
+		print("True\n");
+	else
+		print("False\n");
+}
+
+void main()
+{
+	f(true);
+	f(false);
+	
+	bool x; // should be false
+	f(x);
+	x = false;
+	f(x);
+	x = true;
+	f(x);
+	
+	x = 1==1 and true;
+	f(x);
+	f(1-1==0);
+	f(2-1==0);
+	
+	bool z;
+	z = true;
+	
+	bool y = z and 1 != 2;
+	f(y);
+	f(not y);
+	f(not not y);
+	f(y and not (0==1) and x);
+	
+	f(y and not (1!=1) and x);
+}

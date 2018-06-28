@@ -1,0 +1,47 @@
+void main(){
+	int a;
+	int c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+	a = c;
+
+	// Please, use appropriate number of registers!!!! :)
+}

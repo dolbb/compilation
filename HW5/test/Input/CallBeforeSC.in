@@ -1,0 +1,7 @@
+void g(){
+	return;
+}
+
+void main(){
+	f()
+}

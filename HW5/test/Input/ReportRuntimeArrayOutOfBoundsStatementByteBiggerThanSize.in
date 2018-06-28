@@ -1,0 +1,5 @@
+void main(){
+	int a[1];
+	byte x = 2 b;
+	a[x] = 3; // size of array is 1 :O
+}

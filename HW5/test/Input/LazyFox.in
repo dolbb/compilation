@@ -1,0 +1,14 @@
+bool lazyFox(){
+	print("Fox wants to rest :)\n");
+	return true;
+}
+
+void main(){
+	if(true or lazyFox()){
+		print("We can manage without the fox :)");
+	}
+	
+	if(false and not lazyFox()){
+		print("We can manage without the fox :)");
+	}
+}

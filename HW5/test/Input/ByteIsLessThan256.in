@@ -1,0 +1,9 @@
+void main(){
+	int x = 255 b;
+	int y = 0 b;
+}
+
+void help(){
+	int z = 256 b;
+	// Byte is less than 256
+}

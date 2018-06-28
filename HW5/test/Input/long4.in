@@ -1,0 +1,17 @@
+// check that we remove variables from the stack in a while scope with a break statement
+
+
+void main()
+{
+	int i = 0;
+	while (i < 42)
+	{
+		while (true)
+		{
+			int x;
+			break;
+		}
+		i = i + 1;
+	}
+	print("GREAT SUCCESS\n");
+}

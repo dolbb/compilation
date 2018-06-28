@@ -1,0 +1,16 @@
+void main(){
+	int x = 3;
+	bool c = true and false and not true;
+	x = x;
+	c = c;
+	c = not c;
+	x = x * x;
+	c = x == x;
+	c = x != x;
+	c = x < x;
+
+}
+
+void f(){
+	bool x = not ( 3+3+3+3);
+}

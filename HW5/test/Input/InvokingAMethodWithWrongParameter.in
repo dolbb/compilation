@@ -1,0 +1,7 @@
+void f(int oneParameter){
+	return;
+}
+
+void main(){
+	f();
+}

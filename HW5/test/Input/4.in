@@ -1,0 +1,36 @@
+// check token priority
+
+// BINOP > RELOP > NOT > AND > OR
+void f(bool x)
+{
+	if (x)
+		print("True\n");
+	else
+		print("False\n");
+}
+
+void main()
+{
+	f(not false and false); 				// false		(not false) and false = true and false = false
+	f(true and true or false); 				// true
+	
+	f(true and not (1==0));					// true
+	f(not (5 != 5));							// true
+	f(true and not (5+3 == 8));				// false
+	f(false or not (1+2+3>=100));				// true
+	
+	bool x;
+	f(1b > 5 or not x and not not not x);	// true
+	f(not x or false);						// true
+	f(not x and true);						// true
+	f(not x or x);							// true
+	f(not x and x);							// false
+	
+	x = true;
+	f(1b > 5 or not x and not not not x);	// false
+	f(not x or false);						// false
+	f(not x and true);						// false
+	f(not x or x);							// true
+	f(not x and x);							// false
+}
+

@@ -1,0 +1,8 @@
+void main(){
+	return;
+}
+
+void bigArray(int array[70],int win[90]){
+	return;
+	// Please, when you refer to function parameters, also recycle ;)
+}

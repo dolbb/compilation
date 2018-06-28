@@ -1,0 +1,8 @@
+void main(){
+	bool a = (1 < 2);
+	bool c = (3 > 2);
+	bool d = (5 == 5);
+	bool e = (4 <= 4);
+	bool f = (4 >= 4);
+	bool g = (4 != 8);
+}

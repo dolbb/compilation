@@ -1,0 +1,8 @@
+void main(){
+	if(true or true and false){
+		printi(42);
+	}
+	if(false and false or true){
+		printi(42);
+	}
+}

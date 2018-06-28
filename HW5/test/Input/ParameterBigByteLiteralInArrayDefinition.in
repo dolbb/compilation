@@ -1,0 +1,3 @@
+void illegalParmeterBigByteLiteral(int x[400 b]){
+	return;
+}

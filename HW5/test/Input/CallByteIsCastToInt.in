@@ -1,0 +1,16 @@
+byte one(){
+	return 1 b;
+}
+int two(){
+	return (one() + one());
+}
+
+int iOne(){
+	return one();
+}
+
+void main(){
+	byte x = one();
+	int y = one();
+	return;
+}

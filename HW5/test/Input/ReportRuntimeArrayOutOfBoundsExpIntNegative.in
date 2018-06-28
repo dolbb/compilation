@@ -1,0 +1,5 @@
+void main(){
+	int a[1];
+	int x = 0 - 1;
+	printi(a[x]);
+}

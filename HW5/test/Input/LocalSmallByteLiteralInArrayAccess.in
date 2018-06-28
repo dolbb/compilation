@@ -1,0 +1,4 @@
+void legalLocalSmallByteLiteral(){
+	bool w[240 b];
+	w[0 b] = true;
+}

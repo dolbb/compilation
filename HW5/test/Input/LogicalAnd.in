@@ -1,0 +1,6 @@
+void main(){
+	bool a = (true and true);
+	bool c = (false and true);
+	bool d = (true and false);
+	bool e = (false and false);
+}

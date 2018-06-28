@@ -1,0 +1,4 @@
+void main(){
+	int x = 4 - 8 / 2;
+	x = x / x; 
+}

@@ -1,0 +1,20 @@
+void f(int x[5]){
+	int y[5 b];
+	int z[5 b];
+	byte w [ 64 ];
+	y[ 3 b ] = z[ 2 b];
+	y[ 7 b ] = w[20 b];
+	y = z;
+	z = y;
+	x = y;
+	z = x;
+}
+
+void main(){
+	int x[5	 b];
+	f(x);
+}
+
+void illegalLocalBigByteLiteral(){
+	bool w[257 b];
+}

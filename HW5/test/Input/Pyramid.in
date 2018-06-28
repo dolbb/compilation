@@ -1,0 +1,80 @@
+void printSpaces(int x){
+	int i = 0;
+	while(i < x){
+		print(" ");
+		i = i + 1;
+	}
+}
+
+void printNum(int num){
+	printSpaces(num - 1);
+	printi(num);
+	print("\n");		
+}
+
+void a(){
+	int num = 9 b;
+	printNum(num);
+	printNum(num + 1);
+	printNum(num);
+}
+
+void c(){
+	int num = 8 b;
+	printNum(num);
+	a();
+	printNum(num);
+}
+
+void d(){
+	int num = 7 b;
+	printNum(num);
+	c();
+	printNum(num);
+}
+
+void e(){
+	int num = 6 b;
+	printNum(num);
+	d();
+	printNum(num);
+}
+
+void f(){
+	int num = 5 b;
+	printNum(num);
+	e();
+	printNum(num);
+}
+
+void g(){
+	int num = 4 b;
+	printNum(num);
+	f();
+	printNum(num);
+}
+
+void h(){
+	int num = 3 b;
+	printNum(num);
+	g();
+	printNum(num);
+}
+
+void i(){
+	int num = 2 b;
+	printNum(num);
+	h();
+	printNum(num);
+}
+
+void j(){
+	int num = 1 b;
+	printNum(num);
+	i();
+	printNum(num);
+}
+
+void main(){
+	j();
+}

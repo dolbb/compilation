@@ -1,0 +1,8 @@
+void main(){
+	int a[1];
+	int x = 250 b + 6 b;
+	printi(a[x]); // Prints :)
+	print("\n");
+	x = 1 b;
+	printi(a[x]); // Error
+}

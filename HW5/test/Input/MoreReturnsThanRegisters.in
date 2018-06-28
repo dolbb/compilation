@@ -1,0 +1,43 @@
+void main(){
+	return;
+}
+
+int manyReturns(){
+	return 1;
+	return 2 b;
+	return 3;
+	return 4;
+	return 5;
+	return 6;
+	return 7;
+	return 8;
+	return 9;
+	return 10;
+	return 11;
+	return 12;
+	return 13;
+	return 14;
+	return 15;
+	return 16;
+	return 17;
+	return 18;
+	return 19;
+	return 20;
+	return 21;
+	return 22;
+	return 23;
+	return 24;
+	return 25;
+	return 26;
+	return 27;
+	return 28;
+	return 29;
+	return 30;
+	return 31;
+	return 32;
+	return 33;
+	return 34;
+	return 35;
+	return 36;
+	// 36 returns, but registers? ;) Please recycle :)
+}

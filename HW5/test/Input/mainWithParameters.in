@@ -1,0 +1,4 @@
+void main(int a,bool c,byte d){
+	return;
+	// Main doesn't have parameters... :(
+}

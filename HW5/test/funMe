@@ -1,0 +1,395 @@
+#!/bin/bash
+
+flex scanner.lex
+bison -d parser.ypp
+g++ -o hw5 *.c *.cpp
+
+NEVER_FAILED=-1
+NUM_LEVELS=10
+tests_won=0
+tests_lost=0
+current_test_level=-1
+failed_test_level=-1
+test_all=0
+
+function compareCompileFiles {
+file=$1
+#./hw5 < "Input/$file.in" >& "ExpectedCompile/$file.out"
+./hw5 < "Input/$file.in" >& "ActualCompile/$file.res"
+diff "ActualCompile/$file.res" "ExpectedCompile/$file.out"
+DIFF=$(diff "ActualCompile/$file.res" "ExpectedCompile/$file.out")
+if [[ "$DIFF" != "" ]]; then #If true, then test$i.res and test$i.out are different files :(
+	let tests_lost++
+	echo "You have failed in the following COMPILE test: $file :(" 
+	echo "You harmed HW3, please fix it now before you move on to MIPS :)"
+	echo "The only change to do from hw3 ,is to turn off PrintScope!!!! :)"
+	if(($NEVER_FAILED == $failed_test_level)); then
+		failed_test_level=$current_test_level
+	fi
+else
+	let tests_won++
+fi
+}
+
+function compareRuntimeFiles {
+file=$1
+./hw5 < "Input/$file.in" >& "ActualMips/$file.il"
+#./spim -file "ActualMips/$file.il" >& "ExpectedRuntime/$file.out"
+./spim -file "ActualMips/$file.il" >& "ActualRuntime/$file.res"
+diff "ActualRuntime/$file.res" "ExpectedRuntime/$file.out"
+DIFF=$(diff "ActualRuntime/$file.res" "ExpectedRuntime/$file.out")
+if [[ "$DIFF" != "" ]]; then #If true, then test$i.res and test$i.out are different files :(
+	let tests_lost++
+	echo "You have failed in the following RUNTIME test: $file :(" 
+	if(($NEVER_FAILED == $failed_test_level)); then
+		failed_test_level=$current_test_level
+	fi
+else
+	let tests_won++
+fi
+
+}
+
+function printSummary {
+if(( $tests_lost == 0 )); then
+	echo "You passed all $tests_won tests :), congratulations!!!"
+	if(( $test_all == 1 )); then
+		echo "You passed all" $(($current_test_level+1)) "levels :)"
+	else
+		echo "You passed level $current_test_level :) try the next levels :)"
+		echo "Once you are ready to test all of them at once, just type:"
+		echo "./funMe"
+	fi
+	echo "If you have additional ideas for tests, feel free to share"
+	echo "and contribute :)"
+else
+	echo "You passed $tests_won tests, but failed in $tests_lost"
+	echo "The first level you failed at is $failed_test_level :("
+	echo "Please use:"
+	echo "./funMe $failed_test_level"
+	echo "To run this level only, before you go on to deal with higher levels :)"
+	echo "New FAQ has been opened in drive link to organize the answers"
+	echo "to all of your questions :)"
+fi
+}
+
+function level0 {
+
+compareCompileFiles "hw3_t2" # TA Hw3 tests :)
+compareCompileFiles "hw3_t3" # TA Hw3 tests :)
+compareCompileFiles "hw3_t4" # TA Hw3 tests :)
+compareCompileFiles "hw3_t5" # TA Hw3 tests :)
+compareCompileFiles "hw3_t7" # TA Hw3 tests :)
+compareCompileFiles "hw3_t9" # TA Hw3 tests :)
+compareCompileFiles "hw3_t10" # TA Hw3 tests :)
+compareCompileFiles "hw3_t11" # TA Hw3 tests :)
+compareCompileFiles "hw3_t12" # TA Hw3 tests :)
+compareCompileFiles "hw3_t13" # TA Hw3 tests :)
+compareCompileFiles "hw3_t14" # TA Hw3 tests :)
+compareCompileFiles "hw3_t16" # TA Hw3 tests :)
+compareCompileFiles "hw3_t17" # TA Hw3 tests :)
+compareCompileFiles "hw3_t19" # TA Hw3 tests :)
+compareCompileFiles "hw3_t20" # TA Hw3 tests :)
+compareCompileFiles "hw3_t21" # TA Hw3 tests :)
+compareCompileFiles "hw3_t22" # TA Hw3 tests :)
+compareCompileFiles "hw3_t23" # TA Hw3 tests :)
+compareCompileFiles "hw3_t24" # TA Hw3 tests :)
+compareCompileFiles "hw3_t25" # TA Hw3 tests :)
+compareCompileFiles "hw3_t26" # TA Hw3 tests :)
+compareCompileFiles "hw3_t27" # TA Hw3 tests :)
+compareCompileFiles "hw3_t28" # TA Hw3 tests :)
+compareCompileFiles "hw3_t29" # TA Hw3 tests :)
+compareCompileFiles "hw3_t30" # TA Hw3 tests :)
+compareCompileFiles "hw3_t31" # TA Hw3 tests :)
+compareCompileFiles "hw3_t32" # TA Hw3 tests :)
+compareCompileFiles "hw3_t33" # TA Hw3 tests :)
+compareCompileFiles "hw3_t34" # TA Hw3 tests :)
+compareCompileFiles "hw3_t35" # TA Hw3 tests :)
+compareCompileFiles "hw3_t36" # TA Hw3 tests :)
+compareCompileFiles "hw3_t37" # TA Hw3 tests :)
+compareCompileFiles "hw3_t38" # TA Hw3 tests :)
+compareCompileFiles "hw3_t39" # TA Hw3 tests :)
+compareCompileFiles "hw3_t40" # TA Hw3 tests :)
+compareCompileFiles "hw3_t41" # TA Hw3 tests :)
+compareCompileFiles "hw3_t43" # TA Hw3 tests :)
+compareCompileFiles "hw3_t44" # TA Hw3 tests :)
+compareCompileFiles "hw3_t45" # TA Hw3 tests :)
+compareCompileFiles "hw3_t46" # TA Hw3 tests :)
+compareCompileFiles "hw3_t47" # TA Hw3 tests :)
+compareCompileFiles "hw3_t48" # TA Hw3 tests :)
+compareCompileFiles "hw3_t49" # TA Hw3 tests :)
+compareCompileFiles "hw3_t50" # TA Hw3 tests :)
+compareCompileFiles "AnotherCheckingOfExpInIf"
+compareCompileFiles "ArrayCannotBeEqualToItself"
+compareCompileFiles "ArrayCannotHaveSize0"
+compareCompileFiles "ArrayCannotHaveSize256"
+compareCompileFiles "ArraySizeMismatch"
+compareCompileFiles "AvengersWithoutAMain"
+compareCompileFiles "BeingEqualToMyselfIsNotOkay"
+compareCompileFiles "BinopAndRelop"
+compareCompileFiles "BreakBeforeSC"
+compareCompileFiles "ByteArrayAsIntArray"
+compareCompileFiles "ByteIsLessThan256"
+compareCompileFiles "CallBeforeSC"
+compareCompileFiles "CallingAFunction"
+compareCompileFiles "DollarsAreNotWelcomeInOurFlex"
+compareCompileFiles "EmptyFile"
+compareCompileFiles "IllegalBreak"
+compareCompileFiles "IncompleteSyntaxArray"
+compareCompileFiles "IncompleteYetArrayInvalidSize"
+compareCompileFiles "VarParameterIsAlreadyAMethod"
+compareCompileFiles "LexicalBeforeNoVoidMain"
+compareCompileFiles "LonelyIfRequiresBool"
+compareCompileFiles "MethodCannotBeSetAValue"
+compareCompileFiles "MethodWithoutRbrace"
+compareCompileFiles "NegativeNumber"
+compareCompileFiles "OnlyOneGladiator"
+compareCompileFiles "ReportDefVar"
+compareCompileFiles "ReportUndefVar"
+compareCompileFiles "ReturnTypeNotVoidCheckBeforeSC"
+compareCompileFiles "ReturnVoidCheckBeforeSC"
+compareCompileFiles "SCAfterIllegalTypeMismatch"
+compareCompileFiles "SCAgainAfterIllegalTypeMismatch"
+compareCompileFiles "UndefinedFunction"
+compareCompileFiles "WhileBeforeRparen"
+compareCompileFiles "WhileExpectsBool"
+compareCompileFiles "boolMain"
+compareCompileFiles "byteMain"
+compareCompileFiles "intMain"
+compareCompileFiles "mainWithParameters"
+compareCompileFiles "MethodWasNotDefinedYet" # New test :)
+compareCompileFiles "VariableDefinedButNotAsAMethod" # New test :)
+compareCompileFiles "ByteAndIntBinop" # Error report 
+compareCompileFiles "IntAndByteBinop" # Error report
+compareCompileFiles "IntAndIntBinop" # Error report
+compareCompileFiles "InvokingAMethodWithWrongParameter" # Not first time
+compareCompileFiles "LocalBigByteLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "LocalSmallByteLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "LocalBigIntLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "LocalSmallIntLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "LocalBigByteLiteralInArrayAccess" # New 25 May
+compareCompileFiles "LocalSmallByteLiteralInArrayAccess" # New 25 May
+compareCompileFiles "LocalBigIntLiteralInArrayAccess" # New 25 May
+compareCompileFiles "LocalSmallIntLiteralInArrayAccess" # New 25 May
+compareCompileFiles "ParameterBigByteLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "ParameterSmallByteLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "ParameterBigIntLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "ParameterSmallIntLiteralInArrayDefinition" # New 25 May
+compareCompileFiles "parameterNameIsB" # New 26 May
+compareCompileFiles "methodNameIsB" # New 26 May
+compareCompileFiles "parameterDefinedTwice" # New 26 May
+compareCompileFiles "nameIsBothOfMethodAndParameter" # New 26 May
+compareCompileFiles "ArrayAccessesItselfIsImpossible" # New 27 May credited to Dor Braunstein & Shani Keller
+compareCompileFiles "ArrayElementIsNotAnArray" # New 27 May credited to Dor Braunstein & Shani Keller
+compareCompileFiles "ReturningArray" # New 27 May
+compareCompileFiles "ArrayAndNotArrayShareSameName" # New 29 May
+compareCompileFiles "ArrayIsNotAFunction" # New 29 May
+compareCompileFiles "ArraySizeOneAssignsElementIsWrong" # New 29 May
+compareCompileFiles "ArraySizeOneExpectsArray" # New 29 May
+compareCompileFiles "NotArrayAccessEqualNotArrayAccess" # New 29 May
+compareCompileFiles "NotArrayAccessLeftValue" # New 29 May
+compareCompileFiles "NotArrayAccessParameter" # New 29 May
+compareCompileFiles "NotArrayAccessReturn" # New 29 May
+compareCompileFiles "NotArrayAccessRightValue" # New 29 May
+compareCompileFiles "TwoArraysShareSameName" # New 29 May
+compareCompileFiles "MainReturnMain" # Last update :)
+compareCompileFiles "AssignVoidInQuestion" # Last update :)
+compareCompileFiles "AnswerForEverything" # Last update :)
+compareCompileFiles "PrintingANonString" # Last update :)
+compareCompileFiles "BreakNotInWhile" # Last update :)
+
+}
+
+function level1 {
+
+compareRuntimeFiles "JustMain"
+compareRuntimeFiles "MoreThanOneReturn"
+compareRuntimeFiles "MoreThanOneFunc"
+compareRuntimeFiles "MoreDeclarationsThanRegisters"
+compareRuntimeFiles "MoreLocalDefaultFieldsThanRegisters"
+compareRuntimeFiles "MoreLocalInitalizedFieldsThanRegisters"
+compareRuntimeFiles "MoreAssignsThanRegisters"
+compareRuntimeFiles "MoreBinopThanRegisters"
+compareRuntimeFiles "MoreReturnsThanRegisters"
+compareRuntimeFiles "MoreArraysThanRegisters"
+compareRuntimeFiles "MoreStackParametersSizeThanRegisters";
+compareRuntimeFiles "MoreParenthesesThanRegisters"
+compareRuntimeFiles "MoreBooleansThanRegisters"
+
+}
+
+function level2 {
+
+compareRuntimeFiles "ReportRuntimeDivisionByZero"
+compareRuntimeFiles "ReportRuntimeDivisionByZeroTricky"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsNegative"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsBiggerThanSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsBiggerEqualToSize"
+compareRuntimeFiles "DivideBeforeSub"
+compareRuntimeFiles "AddBeforeMult"
+compareRuntimeFiles "ByteOperationsUseMaskOnAdd"
+compareRuntimeFiles "ByteOperationsUseMaskOnMult"
+compareRuntimeFiles "ByteOperationsUseMaskOnSub"
+
+}
+
+function level3 {
+
+compareRuntimeFiles "MoreInitalizedBooleansThanRegisters"
+compareRuntimeFiles "LogicalNot"
+compareRuntimeFiles "LogicalOr"
+compareRuntimeFiles "LogicalAnd"
+compareRuntimeFiles "LogicalRelop"
+compareRuntimeFiles "InitializeBooleanFieldFromStack"
+compareRuntimeFiles "LoadBooleanFieldFromStack"
+compareRuntimeFiles "AssignBooleanFieldFromStack"
+compareRuntimeFiles "MoreBooleanAssignThanRegisters"
+
+}
+
+function level4 {
+
+compareRuntimeFiles "BraceScope"
+compareRuntimeFiles "ReturnFromBraceScope"
+compareRuntimeFiles "PizzaBrace"
+compareRuntimeFiles "EnsureCleanBraceScopeIsLegal"
+compareRuntimeFiles "ReturnBeforeStoring"
+
+}
+
+function level5 {
+
+compareRuntimeFiles "BasicPrinting"
+compareRuntimeFiles "CompositionOfFunctions"
+compareRuntimeFiles "LonelyIf"
+compareRuntimeFiles "MainTriangle"
+compareRuntimeFiles "MainIsALonelyWolf"
+compareRuntimeFiles "ManyFunctions"
+compareRuntimeFiles "MethodRecursion"
+compareRuntimeFiles "ReturnByteIsAnInt"
+#compareRuntimeFiles "SmileForever"
+compareRuntimeFiles "TemporaryScopeIsForgottenInBrotherScopes" # New test :)
+compareRuntimeFiles "True" # Last update :)
+compareRuntimeFiles "ReturningAnArrayElement" # New 27 May
+compareRuntimeFiles "IfAndElseDoTheSame"
+compareRuntimeFiles "ByteAndByteBinop" # No error
+compareRuntimeFiles "CallByteIsCastToInt" # Last update :)
+compareRuntimeFiles "hw3_t1" # TA Hw3 tests :)
+compareRuntimeFiles "hw3_t6" # TA Hw3 tests :)
+compareRuntimeFiles "hw3_t8" # TA Hw3 tests :)
+compareRuntimeFiles "hw3_t15" # TA Hw3 tests :)
+compareRuntimeFiles "hw3_t18" # TA Hw3 tests :)
+compareRuntimeFiles "hw3_t42" # TA Hw3 tests :)
+	
+}
+
+function level6 { # These tests are credited to Eli Kaski :)
+
+compareRuntimeFiles "1"
+compareRuntimeFiles "2"
+compareRuntimeFiles "3"
+compareRuntimeFiles "4"
+compareRuntimeFiles "5"
+compareRuntimeFiles "6"
+compareRuntimeFiles "7"
+compareRuntimeFiles "8"
+compareRuntimeFiles "9"
+compareRuntimeFiles "10"
+compareRuntimeFiles "11"
+compareRuntimeFiles "12"
+compareRuntimeFiles "13"
+compareRuntimeFiles "14"
+compareRuntimeFiles "15"
+compareRuntimeFiles "16"
+compareRuntimeFiles "17"
+compareRuntimeFiles "18"
+compareRuntimeFiles "19"
+compareRuntimeFiles "20"
+compareRuntimeFiles "21"
+compareRuntimeFiles "long1"
+compareRuntimeFiles "long2"
+compareRuntimeFiles "long3"
+compareRuntimeFiles "long5"
+compareRuntimeFiles "modulo"
+compareRuntimeFiles "long4"
+
+}
+
+function level7 {
+
+compareRuntimeFiles "AndBeforeOr"
+compareRuntimeFiles "SelfLoading"
+compareRuntimeFiles "MultipleBreaks"
+compareRuntimeFiles "BreakAfterBreak"
+compareRuntimeFiles "BreakInsideIf"
+compareRuntimeFiles "BreakInsideElse"
+compareRuntimeFiles "VariableIsLoyalToItsScope"
+compareRuntimeFiles "EscapedAWhileAgo"
+compareRuntimeFiles "CurseOfRecursion"
+compareRuntimeFiles "RelopUltimate"
+compareRuntimeFiles "SwitchAndAdvanceTogether"
+compareRuntimeFiles "PrintTillDepartion"
+compareRuntimeFiles "LazyFox"
+compareRuntimeFiles "Pyramid"
+compareRuntimeFiles "StatementsWithoutBrace"
+
+}
+
+function level8 {
+
+compareRuntimeFiles "t1"
+compareRuntimeFiles "t2"
+compareRuntimeFiles "t3"
+	
+}
+
+function level9 {
+
+compareRuntimeFiles "NegativeAndPositive"
+compareRuntimeFiles "BinopUltimate" # Credit to Nir Chachamotivz on edge case in binop implementation :)
+compareRuntimeFiles "MaxRegistersInAction"
+compareRuntimeFiles "Ultimate"
+compareRuntimeFiles "FunctionByValue"
+compareRuntimeFiles "RecursionFunctionByValue"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsStatementByteEqualToSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsStatementByteBiggerThanSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsExpByteEqualToSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsExpByteBiggerThanSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsExpIntEqualToSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsExpIntBiggerThanSize"
+compareRuntimeFiles "ReportRuntimeArrayOutOfBoundsExpIntNegative"
+compareRuntimeFiles "IfIfElse"
+compareRuntimeFiles "MoreArrayAssignsThanRegisters"
+
+# These tests are not relevant due to 
+# "Can't expand text segment mips" ERROR :D
+
+#compareRuntimeFiles "JumpAsRaInReturn"
+#compareRuntimeFiles "JumpDivideByZero"
+#compareRuntimeFiles "JumpIndexOutOfBounds"
+#compareRuntimeFiles "JumpControlScopes"
+#compareRuntimeFiles "JumpRelop" # Credit to Eli Kaski on relop branches idea :)
+
+
+}
+
+function level {
+
+levelToRun=$1
+echo "You are running level" $levelToRun" now :)"
+level$levelToRun
+}
+
+echo "Maximum level is "$(($NUM_LEVELS-1))
+if (( $# == 0 )); then
+test_all=1
+	for(( index=0 ; $index < $NUM_LEVELS ; index++)); do
+		let current_test_level++
+		level $index
+	done
+else
+	current_test_level=$1
+	level $current_test_level
+fi
+
+printSummary

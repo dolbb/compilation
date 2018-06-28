@@ -1,0 +1,70 @@
+void printIntResult(int value){
+	printi(value);
+	print("\n");
+}
+
+void printBoolResult(bool value){
+	if(value)
+		print("true");
+	else
+		print("false");
+	print("\n");
+}
+
+bool flipBool(bool value){
+	value = not value;
+	return value;
+}
+
+void increment(int value){
+	value = value + 1;
+}
+
+void updateElementAtIndex42(int a[70], byte d[70], bool z[70]){
+	a[42] = 42;
+	d[42] = 13 b;
+	z[42] = true;
+}
+
+void recursionIsFun(int a[70], byte d[70], bool z[70], int index){
+	if(index == 0)
+		return;
+	printIntResult(a[42]); // 0
+	printIntResult(d[42]); // 0
+	printBoolResult(z[42]); // false
+
+	updateElementAtIndex42(a, d, z); // By value, should not affect here :)
+
+	index = index - 1;
+	recursionIsFun(a, d, z, index);
+	print("Index = ");
+	printIntResult(index); // We ensure index is the same :)
+
+	printIntResult(a[42]); // 0
+	printIntResult(d[42]); // 0
+	printBoolResult(z[42]); // false
+	
+	index = index - 1; // Should not affect :)
+}
+
+void main(){
+
+	int a[70];
+	byte d[70];
+	bool z[70];
+
+	printIntResult(a[42]); // 0
+	printIntResult(d[42]); // 0
+	printBoolResult(z[42]); // false
+
+	d[42] = 77 b;
+	
+	recursionIsFun(a, d, z, 13); // By value, should not affect here :)
+
+
+	printIntResult(a[42]); // Remains 0 :)
+	printIntResult(d[42]); // Became 77 b :)
+	printBoolResult(z[42]); // Remains false :)
+
+
+}

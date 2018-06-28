@@ -1,0 +1,24 @@
+// check order of evaluation. expressions should be evaluated in-order
+
+
+int x()
+{
+	print("x");
+	return 0;
+}
+
+int y() 
+{
+	print("y");
+	return 0;
+}
+
+void foo(int m, int n)
+{
+	return;
+}
+
+void main()
+{
+	foo(x(),y()); // should print xy and not yx
+}

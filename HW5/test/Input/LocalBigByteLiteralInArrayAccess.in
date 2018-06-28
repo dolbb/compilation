@@ -1,0 +1,4 @@
+void illegalLocalBigByteLiteral(){
+	bool w[240 b];
+	w[280 b] = true;
+}

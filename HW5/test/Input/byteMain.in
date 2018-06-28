@@ -1,0 +1,4 @@
+byte main(){
+	return 66 b;
+	// main has to have return type void, not byte
+}

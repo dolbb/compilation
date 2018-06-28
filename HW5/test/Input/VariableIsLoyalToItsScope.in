@@ -1,0 +1,9 @@
+void main(){
+	{
+		int x;
+		x = 3;
+		printi(x); // Should be three :)
+	}
+	int x;
+	printi(x); // Should be zero :)
+}

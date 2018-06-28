@@ -1,0 +1,33 @@
+// test passing array to function
+// also change the array inside the function and check it did not change in the original scope
+
+void foo(int x[10])
+{
+	printi(x[1]);
+	printi(x[3]);
+	printi(x[3]);
+	printi(x[7]);
+	print("\n");
+	
+	
+	x[0] = 1337;
+	printi(x[0]);
+	print("\n");
+}
+
+
+void main()
+{
+	int x[10];
+	
+	int i = 0;
+	while (i < 10)
+	{
+		x[i] = i;
+		i = i + 1;
+	}
+
+	foo(x);
+	printi(x[0]);
+	print("\n");
+}

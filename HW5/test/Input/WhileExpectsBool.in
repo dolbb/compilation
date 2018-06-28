@@ -1,0 +1,5 @@
+void main(){
+	while(666)
+		break;
+	// The devil can't make this while work! :)
+}

@@ -1,0 +1,5 @@
+int main(){
+	return 0;
+}
+
+$$$ // It might be dollars, and we still don't report about void main ^^

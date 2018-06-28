@@ -1,0 +1,12 @@
+// test accessing function arguments
+void eli(int x)
+{
+	if (x == 1)
+		print("im at eli\n");
+}
+
+
+void main()
+{
+	eli(1);
+}

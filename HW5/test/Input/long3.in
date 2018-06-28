@@ -1,0 +1,31 @@
+// check that we remove variables from the stack in a function scope with a return statement
+
+void foo()
+{
+	int x;
+	return;
+}
+
+int bar()
+{
+	int x;
+	return 1;
+}
+
+void main()
+{
+	int i = 0;
+	while (i < 42)
+	{
+		foo();
+		i = i + 1;
+	}
+	
+	i = 0;
+	while (i < 42)
+	{
+		bar();
+		i = i + 1;
+	}
+	print("GREAT SUCCESS\n");
+}

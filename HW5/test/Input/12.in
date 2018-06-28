@@ -1,0 +1,25 @@
+// simple array check
+
+
+
+void main()
+{
+	int i = 0;
+	int arr[10];
+	
+	while (i < 10)
+	{
+		arr[i] = i;
+		i = i + 1;
+	}
+	
+	i = 9;
+	while (i >= 0)
+	{
+		printi(arr[i]);
+		print("\n");
+		i = i - 1;
+	}
+	
+	i = arr[i]; // should be error because i = -1
+}

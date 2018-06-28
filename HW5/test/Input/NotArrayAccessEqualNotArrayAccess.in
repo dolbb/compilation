@@ -1,0 +1,6 @@
+void main(){
+	int x[7];
+	x[7] = x[7];
+	int y; // I am not an array :)
+	y[1] = y[2];
+}

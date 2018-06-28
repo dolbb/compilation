@@ -1,0 +1,36 @@
+void main(){
+	int x[8];
+	bool y[8];
+	byte z[8];
+	x[4] = 42 b;
+	y[4] = true;
+	z[4] = 42 b;
+	x = x;
+	y = y;
+	z = z;
+	int i = 0;
+	while(i <= 7){
+		x[i] = x[i];
+		y[i] = y[i];
+		z[i] = z[i];
+		if(y[i]){
+			printi(x[i]);
+			print(",");
+			printi(z[i]);
+			print("\n");
+		}
+		i = i + 1;
+	}
+	int a;
+	bool c;
+	byte d;
+	a = 1 b;
+	c = true;
+	d = 1 b;
+	a = a;
+	c = c;
+	d = d;
+	if(c){
+		printi(a + d);
+	}
+}

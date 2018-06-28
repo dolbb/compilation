@@ -1,0 +1,38 @@
+// test nested if and while
+
+
+void main()
+{
+	if (true)
+		if (false)
+		{
+			int x;
+		}
+		else
+			print("this should be printed because 'else' refers to most recent 'if'\n");
+		
+	
+	
+	
+	while (true)
+	{
+		while (true)
+		{
+			break;
+		}
+		print("this should be printed because 'break' refers to most recent 'while'\n");
+		break;
+	}
+	
+	
+	
+	
+	while (true)
+	{
+		if (false)
+			break;
+		print("good job\n");
+		break;
+	}
+	
+}

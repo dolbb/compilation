@@ -1,0 +1,171 @@
+// check scope variables have been removed from the stack
+
+
+// function
+void foo1()
+{
+	int x;
+}
+
+// if
+void foo2()
+{
+	if (true)
+		int x;
+}
+
+// if
+void foo3()
+{
+	if (true)
+	{
+		int x;
+	}
+}
+
+// return
+void foo4()
+{
+	if (true)
+	{
+		int x;
+		return;
+	}
+}
+
+int foo5()
+{
+	if (true)
+	{
+		int x;
+		return 5;
+	}
+}
+
+// else
+int foo6()
+{
+	if (false)
+	{
+		return 0;
+	}
+	else
+		int x;
+}
+
+int foo7()
+{
+	if (false)
+	{
+		return 0;
+	}
+	else
+	{
+		int x;
+	}
+}
+
+int foo8()
+{
+	if (false)
+	{
+		return 0;
+	}
+	else
+	{
+		int x;
+		return 0;
+	}
+}
+
+
+// while
+void foo9()
+{
+	while (false)
+		int y;
+}
+
+void foo10()
+{
+	int x = 1;
+	while (x == 1)
+	{
+		int y;
+		x = 2;
+	}
+}
+
+// break
+void foo11()
+{
+	while (true)
+	{
+		int y;
+		break;
+	}
+}
+
+// return
+void foo12()
+{
+	while (true)
+	{
+		int y;
+		return;
+	}
+}
+
+// return
+int foo13()
+{
+	while (true)
+	{
+		int y;
+		return 0;
+	}
+}
+
+
+// scope
+void foo14()
+{
+	{
+		int x;
+	}
+}
+
+void foo15()
+{
+	{
+		int x;
+		{
+			int y;
+		}
+		x = 5;
+	}
+}
+
+void main()
+{
+	
+	// if this crash for you, comment all calls and uncomment them one-by-one to see which one causes the problem
+	
+	foo1();
+	foo2();
+	foo3();
+	foo4();
+	foo5();
+	foo6();
+	foo7();
+	foo8();
+	foo9();
+	foo10();
+	foo11();
+	foo12();
+	foo13();
+	foo14();
+	foo15();
+	
+	print("If you got here without crashing, you passed :)\n");
+}

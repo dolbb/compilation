@@ -1,0 +1,13 @@
+bool veryTrue(){
+	return true;
+}
+
+bool sameTrue(){
+	return veryTrue();
+}
+
+void main(){
+	if(veryTrue()){
+		bool w = veryTrue();
+	}
+}

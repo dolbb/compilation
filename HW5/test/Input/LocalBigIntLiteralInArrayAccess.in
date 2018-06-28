@@ -1,0 +1,4 @@
+void illegalLocalBigIntLiteral(){
+	bool w[240 b];
+	w[280] = true;
+}

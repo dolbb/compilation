@@ -1,0 +1,14 @@
+void main(){
+	bool c[42];
+	c[8] = true;
+	if(c[8] and c[8] and c[8]){
+		while(true){
+			break;
+		}
+		print("Breaked correctly :)");
+		while(c[8]){
+			c[8] = not c[8];
+		}
+		print("Continued correctly :)");
+	}
+}

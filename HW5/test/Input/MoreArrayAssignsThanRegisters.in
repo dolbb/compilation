@@ -1,0 +1,30 @@
+void main(){
+	int x[7];
+	int y[7];
+	y[3] = 5;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	x = y;
+	return;
+}

@@ -1,0 +1,59 @@
+// bool arrays, assignment, pass to function, read from function
+
+void foo(bool x[10])
+{
+	if (x[5])
+		print("good job\n");
+	
+	bool y = x[5];
+	
+	bool w;
+	w = x[5];
+
+	if (not x[5])
+		print("shouldnt get here3\n");
+	
+	if (not y)
+		print("shouldnt get here4\n");
+	
+	if (not w)
+		print("shouldnt get here5\n");
+	
+	x[5] = false;
+	if (x[5])
+		print("shouldnt get here6\n");
+	x[5] = true;
+	
+	bool z[10];
+	z = x;
+	if (not z[5])
+		print("shouldnt get here7\n");
+}
+
+bool bar(int x)
+{
+	return 1==1 and 1==x;
+}
+
+void main()
+{
+	bool x[10];
+	
+	if (x[5])
+		print("shouldnt get here1\n");
+	
+	x[5] = true;
+	if (not x[5])
+		print("shouldnt get here2\n");
+	
+	foo(x);
+	
+	bar(1);
+	bool y = bar(1);
+	if (not y)
+		print("shouldnt get here8\n");
+	
+	bool z = y and 1==2;
+	if (z)
+		print("shouldnt get here9\n");
+}

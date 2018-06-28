@@ -1,0 +1,35 @@
+// check short-circuit evaluation
+
+bool foo()
+{
+	print("should not be printed\n");
+	return true;
+}
+
+void bar(bool x)
+{
+	return;
+}
+
+void main()
+{
+	
+	bool x = true or foo();
+	bool y = false and foo();
+	bool z = true or not false or foo();
+
+	
+	x = true or foo();
+	y = false and foo();
+	z = true or not false or foo();
+	
+	
+	
+	bar(true or foo());
+	bar(false and foo());
+	bar(true or not false or foo());
+	
+	bar(1 == 1 or foo());
+	
+}
+

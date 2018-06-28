@@ -1,0 +1,23 @@
+void main(){
+	int a;
+	int c;
+	int d;
+	int e;
+	int f;
+	int g;
+	int h;
+	int i;
+	int j;
+	int k;
+	int l;
+	int m;
+	int n;
+	int o;
+	int p;
+	int q;
+	int r;
+	int s;
+	int t;
+	// Make sure that you don't use actual 19 registers ^^
+	// Please recycle and use the same one to put these default fields on stack :)
+}

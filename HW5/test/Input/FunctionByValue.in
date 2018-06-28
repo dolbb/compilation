@@ -1,0 +1,55 @@
+void printIntResult(int value){
+	printi(value);
+	print("\n");
+}
+
+void printBoolResult(bool value){
+	if(value)
+		print("true");
+	else
+		print("false");
+	print("\n");
+}
+
+bool flipBool(bool value){
+	value = not value;
+	return value;
+}
+
+void increment(int value){
+	value = value + 1;
+}
+
+void updateElementAtIndex42(int a[70],byte d[70], bool z[70]){
+	a[42] = 42;
+	d[42] = 13 b;
+	z[42] = true;
+}
+
+void main(){
+	int x = 7;
+	printIntResult(x); // 7
+	increment(x);
+	printIntResult(x); // Remains 7 :)
+
+	bool c = false;
+	printBoolResult(c);
+	flipBool(c);
+	printBoolResult(c);
+
+	int a[70];
+	byte d[70];
+	bool z[70];
+
+	printIntResult(a[42]); // 0
+	printIntResult(d[42]); // 0
+	printBoolResult(z[42]); // false
+
+	updateElementAtIndex42(a, d, z); // By value, should not affect here :)
+
+	printIntResult(a[42]); // Remains 0 :)
+	printIntResult(d[42]); // Remains 0 :)
+	printBoolResult(z[42]); // Remains false :)
+
+
+}

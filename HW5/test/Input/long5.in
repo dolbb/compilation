@@ -1,0 +1,27 @@
+// check that we remove variables from the stack in an if/else scope
+
+
+void main()
+{
+	int i = 0;
+	while (i < 42)
+	{
+		if (true)
+		{
+			int x;
+		}
+		
+		if (false)
+		{
+			int x;
+		}
+		else
+		{
+			int x;
+		}
+		i = i + 1;
+	}
+	
+
+	print("GREAT SUCCESS\n");
+}

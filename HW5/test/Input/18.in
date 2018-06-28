@@ -1,0 +1,36 @@
+// pass bools as arguments
+
+void foo(bool x)
+{
+	if (x)
+		print("yes\n");
+	else
+		print("no\n");
+}
+
+
+void bar(bool x, bool y)
+{
+	if (x)
+		print("yes x\n");
+	else
+		print("no x\n");
+	
+	if (y)
+		print("yes y\n");
+	else
+		print("no y\n");
+	
+}
+
+
+void main()
+{
+	foo(true);
+	foo(false);
+	foo(1==1);
+	foo(not (1==1));
+	
+	bar(1==1, 1!=1);
+	bar(not (1<2), false or true);
+}

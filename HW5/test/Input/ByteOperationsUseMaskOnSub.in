@@ -1,0 +1,4 @@
+void main(){
+	int x = (0 b - 1 b);
+	int y = x / (x - 255);
+}

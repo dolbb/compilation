@@ -1,0 +1,7 @@
+void main(){
+	print("fun");
+}
+
+int iWillReturnByteAsInt(byte x){
+	return x;
+}

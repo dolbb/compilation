@@ -1,0 +1,9 @@
+Loaded: ./exceptions.s
+im at foo and not returning anything
+im at foo and not returning anything
+im at foo and not returning anything
+420
+im at bar and doing return 2;
+im at bar and doing return 2;
+im at bar and doing return 2;
+420

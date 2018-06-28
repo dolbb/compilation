@@ -1,0 +1,34 @@
+// test function that doesnt return anything
+
+
+int foo()
+{
+	print("im at foo and not returning anything\n");	
+}
+
+int bar()
+{
+	print("im at bar and doing return 2;\n");	
+	return 2;
+}
+
+void main()
+{
+	// this should not crash or anything
+	int x = foo();
+	x = foo();
+	foo();
+	
+	x = 420;
+	printi(x);
+	print("\n");
+	
+	
+	int y = bar();
+	y = bar();
+	bar();
+	
+	y = 420;
+	printi(y);
+	print("\n");
+}

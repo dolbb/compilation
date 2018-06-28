@@ -1,0 +1,5 @@
+void main(){
+	int a[1];
+	byte x = 1 b;
+	printi(a[x]);
+}

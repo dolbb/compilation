@@ -1,0 +1,24 @@
+int curseOfRecursion(int x[1]){
+	int negative = 0 - 100;
+	if(x[0] == negative) // Who said int can't be negative? :)
+		return x[0];
+	x[0] = x[0] - 1;
+	return curseOfRecursion(x);
+}
+
+void main(){
+	while(true){
+		while(true){
+			if(true){
+				break;
+			}
+		}
+		int x[1]; // Size of 1? Still array :)
+		x[0] = x[0] + 42; // Should be 42 :)
+		if(x[0] > 42){
+			print("Error :(");
+		}
+		printi(curseOfRecursion(x));
+		break;
+	}
+}

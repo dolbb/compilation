@@ -1,0 +1,20 @@
+void main(){
+	bool z;
+	while(true)
+		while(false){
+			while(z){
+				break;
+				while(z){
+					while(true){
+						break;
+						break;
+					}
+					break;
+				}
+			}
+		}
+}
+
+void illegalBreak(){
+	break;
+}

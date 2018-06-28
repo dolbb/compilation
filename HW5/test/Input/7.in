@@ -1,0 +1,11 @@
+// check removing scope variables from the stack. this should not crash or anything
+void foo()
+{
+	int y;
+}
+
+
+void main()
+{
+	foo();
+}

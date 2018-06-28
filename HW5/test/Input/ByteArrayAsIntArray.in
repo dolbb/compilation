@@ -1,0 +1,6 @@
+void main(){
+	int x[8];
+	byte y[8];
+	x = y;
+	// ILLEGAL :O TypeMismatch
+}

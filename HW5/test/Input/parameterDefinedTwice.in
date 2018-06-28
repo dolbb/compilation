@@ -1,0 +1,3 @@
+void varTwice(byte y, int x, bool x){
+	return; // Should be only once! :)
+}

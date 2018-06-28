@@ -1,0 +1,4 @@
+int main(){
+	return 42;
+	// main has to have return type void, not int
+}

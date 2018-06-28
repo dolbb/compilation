@@ -1,0 +1,27 @@
+void main(){
+	bool c;
+	bool d[200];
+	bool e;
+	bool f;
+	bool g;
+	bool h;
+	bool i;
+	bool j;
+	bool k;
+	bool l;
+	bool m;
+	bool n;
+	bool o;
+	bool p;
+	bool q;
+	bool r;
+	bool s;
+	bool t;
+	bool u;
+	bool v;
+	bool w;
+	bool x;
+	bool y;
+	bool z;
+	bool a;
+}

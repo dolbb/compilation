@@ -1,0 +1,1315 @@
+/*========================================================
+			section 1	-	c user declerations
+========================================================*/
+%{
+	#include <iostream>
+	#include "output.hpp"
+	#include "commonHeader.hpp"
+	#include "machine.hpp"
+
+	using namespace std;
+	using namespace output;
+
+	/*	external data:					*/
+	extern int yylex();
+	extern int yylineno;
+	void yyerror(const char*);
+	
+	/*	global data:					*/
+	SymbolsTable symbolsTable; 	/* symbols data is stored here 	*/
+	int numOfWhileContaining = 0;	/* field for when a break occures	*/
+	bool isMainExist = false;
+	TypeInfo funcReturnDataType; //this holds the current expected return type of a function
+	string currentFuncId;
+	AssemblyArithmeticCommands arithMgr;
+	AssemblyStack asmStack;
+	AssemblyCommands asmCmd; 
+	stack<StatementClass*> statementStack;
+
+	/*	translation addition: 			*/
+	CodeBuffer& codeBuff = CodeBuffer::instance();
+	RegisterManager mgr;
+	vector<TokenClass*> expListVec;
+
+	/*	local functions:				*/
+	void saveInputNumIntoToken(TokenClass* token, int num);
+	TokenClass* basicBoolPrint(bool isTrue);
+	void checkBoolAndGenPrint(TokenClass* token, string reg);
+	void relOpPrint(string op, TokenClass* resTok, TokenClass* leftExp, TokenClass* rightExp);
+	TokenClass* logicalOpAction(TokenClass* exp1, TokenClass* exp2, string op, string quad);
+	TokenClass* relOpAction(TokenClass* exp1, TokenClass* exp2, string op);
+	TokenClass* binOpAction(TokenClass* exp1, TokenClass* exp2, string op);
+	void verifyNumber(TokenClass* e);
+	void verifyNumber(TokenClass* e1, TokenClass* e2);
+	void verifyBool(TokenClass* e);
+	void verifyBool(TokenClass* e1, TokenClass* e2);
+	void verifyIdNotInSymbols(string id);
+	void verifyIdInSymbols(string id);
+	void verifyIdIsntFunction(string id);
+	void verifyFunctionPresent(string id);
+	Func getFuncFromTable(string id);
+	void convertTypeInfoVecToStringVec(vector<TypeInfo>& typeVec, vector<string>& outputVec);
+	void printFunctions();
+	void printScopeSymbols();
+	DATA_TYPE getTypeAsArrType(DATA_TYPE type);
+%}
+
+/*========================================================
+			section 2.1	-	declerations
+========================================================*/
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+%left AND
+%left OR
+%right NOT
+%token TRUE
+%token FALSE
+%token RETURN
+%right IF
+%nonassoc ELSE
+%nonassoc BREAK
+%nonassoc WHILE
+%token SC
+%token COMMA
+%right ASSIGN
+%token ID
+%token NUM
+%token STRING
+%nonassoc EQUAL          
+%nonassoc NOT_EQUAL      
+%nonassoc SMALLER_THAN   
+%nonassoc GREATER_THAN   
+%nonassoc SMALLER_EQ_THAN
+%nonassoc GREATER_EQ_THAN
+%left PLUS MINUS
+%left MULT DIV
+%left LPAREN RPAREN
+%left LBRACK RBRACK
+%left LBRACE RBRACE
+
+%%
+/*========================================================
+			section 2.2	-	rules	
+========================================================*/
+/*----------Program---------------------*/
+Program 	: {asmCmd.initializeProg();} Funcs{};
+
+/*----------Funcs-----------------------*/
+Funcs 		: %empty /*epsilon*/{};
+Funcs 		: FuncDecl Funcs{};
+
+/*----------FuncDecl--------------------*/
+FuncDecl : 	RetType {
+				funcReturnDataType = (dynamic_cast<TokenClass*>($1))->typeInfo;
+			} 
+			NewScope ID {
+				currentFuncId = (dynamic_cast<String*>($4))->getString();
+				verifyIdNotInSymbols(currentFuncId);
+			} 
+			LPAREN Formals{
+				//1. check if id is main. if so isMainexist=true;
+				string id = (dynamic_cast<String*>($4))->getString();
+				int size = (dynamic_cast<TokenClass*>($7))->argList.size();
+				if(id == "main" && funcReturnDataType.type == DATA_VOID && size == 0){
+					isMainExist = true;
+				}
+				//2. take params (iterate), return type and create new Func, add it to symbol table;
+				Func func(id, (dynamic_cast<TokenClass*>($7))->argList, funcReturnDataType);
+				symbolsTable.addFuncSymbol(func);
+				currentFuncId = "";
+				
+				//RAN
+				asmCmd.functionInit(func);
+			}
+	  		RPAREN LBRACE Statements RBRACE M EndScope {
+	//3. change funcReturnDataType to DATA_INVALID.
+	funcReturnDataType.type = DATA_INVALID; 
+	
+	StatementClass* statement = dynamic_cast<StatementClass*>($11);
+	TokenClass* m = dynamic_cast<TokenClass*>($13);
+	codeBuff.bpatch(statement->nextList, m->transAux.quad);
+	
+	//RAN
+	string id = (dynamic_cast<String*>($4))->getString();
+	Func func = symbolsTable.getFunc(id);
+	asmCmd.functionEnd(func, symbolsTable);
+
+	
+};
+
+/*----------RetType---------------------*/
+RetType	: Type{ 
+	$$ = $1;
+};
+
+RetType	: VOID{
+	$$ = new TokenClass(TypeInfo(DATA_VOID));
+};
+
+/*----------Formals---------------------*/
+Formals	: %empty /*epsilon*/{
+	$$ = new TokenClass();
+};
+
+Formals	: FormalsList{
+	$$ = $1;
+};
+
+/*----------FormalsList-----------------*/
+FormalsList : FormalDecl{
+	TokenClass* retToken = new TokenClass();
+	retToken->argList.push_back((dynamic_cast<TokenClass*>($1))->typeInfo);
+	$$ = retToken;
+	delete $1;
+};
+
+FormalsList : FormalDecl COMMA FormalsList{
+	TokenClass* retToken = new TokenClass();
+	//1. add the first exp type to the list.
+	retToken->argList.push_back((dynamic_cast<TokenClass*>($1))->typeInfo);
+	//2. add the rest of the exp to the vector.
+	TokenClass* list = dynamic_cast<TokenClass*>($3);
+	for (vector<TypeInfo>::iterator it = list->argList.begin(); it != list->argList.end(); ++it) {
+		retToken->argList.push_back(*it);
+   	}
+	delete $1;
+	delete $3;
+	$$ = retToken;
+};
+
+/*----------FormalDecl------------------*/
+FormalDecl : Type ID{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	if(currentFuncId == s){
+		errorDef(yylineno,s);
+		exit(1);
+	}
+	//2. insert to symbol table (manage offset and all this shit).
+	TokenClass* token = dynamic_cast<TokenClass*>($1);
+	symbolsTable.addArgSymbol(s,TypeInfo(token->typeInfo.type));
+	asmStack.addNewVar(s, symbolsTable);
+	$$ = new TokenClass(TypeInfo(token->typeInfo));
+	delete $1;
+	delete $2;
+}; 
+
+FormalDecl : Type ID LBRACK NUM RBRACK{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	if(currentFuncId == s){
+		errorDef(yylineno,s);
+		exit(1);
+	}
+	//2 check valid size > 0 and < 256
+	Num* inpNum = dynamic_cast<Num*>($4);
+	int num = inpNum->getNum();
+	if(num <= 0 || num >= 256){
+		errorInvalidArraySize(yylineno, s);
+		delete $1;
+		delete $2;
+		delete $4;
+		exit(1);
+	}
+	//3. insert to symbol table (manage offset and all this shit).
+	TypeInfo typeInfo;
+	TokenClass* token = dynamic_cast<TokenClass*>($1);
+	typeInfo.type = getTypeAsArrType(token->typeInfo.type);
+	typeInfo.size = num;
+	symbolsTable.addArgSymbol(s,typeInfo);
+	asmStack.addNewVar(s, symbolsTable);
+	$$ = new TokenClass(typeInfo);
+	delete $1;
+	delete $2;
+	delete $4;
+};
+
+FormalDecl : Type ID LBRACK NUM B RBRACK{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	if(currentFuncId == s){
+		errorDef(yylineno,s);
+		exit(1);
+	}
+	//2 check valid size > 0
+	Num* inpNum = dynamic_cast<Num*>($4);
+	int num = inpNum->getNum();
+	//3. num > 255 : invalid byte size.
+	if(num < 0 || num >= 256){
+		errorByteTooLarge(yylineno,inpNum->getStr());
+		delete $1;
+		delete $2;
+		delete $4;
+		exit(1);
+	}
+	if(num <= 0){
+		errorInvalidArraySize(yylineno,s);
+		delete $1;
+		delete $2;
+		delete $4;
+		exit(1);
+	}
+	//4. insert to symbol table (manage offset and all this shit).
+	TypeInfo typeInfo;
+	TokenClass* token = dynamic_cast<TokenClass*>($1);
+	typeInfo.type = getTypeAsArrType(token->typeInfo.type);
+	typeInfo.size = num;
+	symbolsTable.addArgSymbol(s,typeInfo);
+	asmStack.addNewVar(s, symbolsTable);
+	$$ = new TokenClass(typeInfo);
+	delete $1;
+	delete $2;
+	delete $4;
+};
+
+/*----------Statements------------------*/
+Statements : Statement{
+	$$ = $1;
+};
+
+Statements : Statements Statement{
+	StatementClass* leftStatements = dynamic_cast<StatementClass*>($1);
+	StatementClass* rightStatement = dynamic_cast<StatementClass*>($2);
+	StatementClass* retStatement = new StatementClass();
+
+	retStatement->start = leftStatements->start;
+	codeBuff.bpatch(leftStatements->nextList, rightStatement->start);
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::merge(rightStatement->nextList, CodeBuffer::makelist(codeBuff.emit("j ")));
+	$$ = retStatement;
+};
+
+/*----------Statement-------------------*/
+Statement : LBRACE NewScope Statements EndScope RBRACE{
+	$$ = $3;
+};
+
+Statement : Type ID SC{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	//2. insert to symbol table (manage offset and all this shit).
+	TokenClass* token = dynamic_cast<TokenClass*>($1);
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = codeBuff.genLabel();
+	symbolsTable.addSymbol(s,TypeInfo(token->typeInfo.type));
+	asmStack.addNewVar(s, symbolsTable);
+	delete $2;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+}; 
+
+Statement : Type ID ASSIGN Exp SC{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	//2. check Type == exp type.
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);
+	switch(token1->typeInfo.type){
+		case DATA_BYTE:
+			if(token4->typeInfo.type != DATA_BYTE){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		case DATA_INT:
+			verifyNumber(token4);
+			break;
+		case DATA_BOOL:
+			verifyBool(token4);
+			break;
+		default:
+			errorMismatch(yylineno);
+			exit(1);
+	}
+	//3. insert to symbol table (manage offset and all this shit).
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = token4->transAux.startLabel;
+
+	symbolsTable.addSymbol(s,TypeInfo(token1->typeInfo.type));
+	asmStack.addNewVar(s, symbolsTable, token4->transAux.assignedReg);
+	
+	mgr.freeReg(token4->transAux.assignedReg);
+	delete $1;
+	delete $2;
+	delete $4;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+}; 
+
+Statement : Type ID LBRACK NUM RBRACK SC{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	//2. check num < 0 || num >= 256: errorInvalidArraySize 
+	Num* inpNum = dynamic_cast<Num*>($4);
+	int num = inpNum->getNum();
+	if(num <= 0 || num >= 256){
+		errorInvalidArraySize(yylineno, s);
+		delete $1;
+		delete $2;
+		delete $4;
+		exit(1);
+	}
+	//3. add to symbols(type-arr and size).
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	token1->typeInfo.type = getTypeAsArrType(token1->typeInfo.type);
+	symbolsTable.addSymbol(s,TypeInfo(token1->typeInfo.type, num));
+	
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = codeBuff.genLabel();
+	asmStack.addNewVar(s, symbolsTable);
+	delete $1;
+	delete $2;
+	delete $4;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+};
+	
+Statement 	: Type ID LBRACK NUM B RBRACK SC{
+	string s = (dynamic_cast<String*>($2))->getString();
+	//1. check id doesnt exist.
+	verifyIdNotInSymbols(s);
+	//2. check num < 0 : errorInvalidArraySize
+	Num* inpNum = dynamic_cast<Num*>($4);
+	int num = inpNum->getNum();
+	if(num <= 0){
+		errorInvalidArraySize(yylineno, s);
+		delete $1;
+		delete $2;
+		delete $4;
+		exit(1);
+	}
+	//3. num > 255 : invalid byte size.
+	if(num > 255){
+		errorByteTooLarge(yylineno,inpNum->getStr());
+		delete $1;
+		delete $2;
+		delete $4;
+		exit(1);
+	}
+	//4. add to symbols(type-arr and size).
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	token1->typeInfo.type = getTypeAsArrType(token1->typeInfo.type);
+	symbolsTable.addSymbol(s,TypeInfo(token1->typeInfo.type, num));
+
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = codeBuff.genLabel();
+	asmStack.addNewVar(s, symbolsTable);
+	delete $1;
+	delete $2;
+	delete $4;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+};
+	
+Statement : ID ASSIGN Exp SC{
+	string s = (dynamic_cast<String*>($1))->getString();
+	//1. check id exists.
+	verifyIdInSymbols(s);
+	//2. check if not function:
+	verifyIdIsntFunction(s);
+	//3. check ID type.
+	TypeInfo typeInfo = symbolsTable.getIdTypeInfo(s);
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	switch(typeInfo.type){
+		case DATA_BYTE:
+			if(token3->typeInfo.type != DATA_BYTE){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		case DATA_INT:
+			verifyNumber(token3);
+			break;
+		case DATA_BOOL:
+			verifyBool(token3);
+			break;
+		case DATA_STRING:
+			if(token3->typeInfo.type != DATA_STRING){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		case DATA_ARR_BYTE:
+		case DATA_ARR_INT:
+		case DATA_ARR_BOOL:
+			if(token3->typeInfo != typeInfo){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		default:
+			errorMismatch(yylineno);
+			exit(1);
+	}
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = token3->transAux.startLabel;
+	asmStack.updateVar(s, symbolsTable, token3->transAux.assignedReg, token3->typeInfo.id);
+	
+	mgr.freeReg(token3->transAux.assignedReg);
+	delete $1;
+	delete $3;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+};
+
+Statement : ID LBRACK Exp RBRACK ASSIGN Exp SC{
+	string s = (dynamic_cast<String*>($1))->getString();
+	//1. check id exists.
+	verifyIdInSymbols(s);
+	//2. check if not function:
+	verifyIdIsntFunction(s);
+	//3. check exp is num.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	verifyNumber(token3);
+	TokenClass* token6 = dynamic_cast<TokenClass*>($6);
+	//4. check if assign can be done to this type.
+	TypeInfo typeInfo = symbolsTable.getIdTypeInfo(s); //this is the ID array type.
+	switch(typeInfo.type){
+		case DATA_ARR_BYTE:
+			if(token6->typeInfo.type != DATA_BYTE){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		case DATA_ARR_INT:
+			verifyNumber(token6);
+			break;
+		case DATA_ARR_BOOL:
+			verifyBool(token6);
+			break;
+		default:
+			errorMismatch(yylineno);
+			exit(1);
+	}
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = token3->transAux.startLabel;
+	string reg3 = token3->transAux.assignedReg;
+	string reg6 = token6->transAux.assignedReg;
+	asmStack.updateArrEntry(s, symbolsTable, reg3, reg6);
+	mgr.freeReg(reg3);
+	mgr.freeReg(reg6);
+	delete $1;
+	delete $3;
+	delete $6;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+}; 
+
+Statement : Call SC{
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = (dynamic_cast<TokenClass*>($1))->transAux.startLabel;
+	delete $1;
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+};
+
+Statement : RETURN SC{
+	if(funcReturnDataType.type != DATA_VOID){
+		errorMismatch(yylineno);
+		exit(1);
+	}
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = codeBuff.genLabel();
+
+	Func func = symbolsTable.getFunc(currentFuncId);
+	asmCmd.functionEnd(func, symbolsTable);
+	// codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	// retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+};
+
+Statement : RETURN Exp SC{
+	TokenClass* token2 = dynamic_cast<TokenClass*>($2);
+	switch(funcReturnDataType.type){
+		case DATA_VOID:
+			errorMismatch(yylineno);
+			exit(1);
+			break;
+		case DATA_BYTE:
+			if(token2->typeInfo.type != DATA_BYTE){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		case DATA_INT:
+			if(token2->typeInfo.type != DATA_BYTE && token2->typeInfo.type != DATA_INT){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		case DATA_BOOL:
+			if(token2->typeInfo.type != DATA_BOOL){
+				errorMismatch(yylineno);
+				exit(1);
+			}
+			break;
+		default:
+			errorMismatch(yylineno);
+			exit(1);
+	}
+
+	//HW5 addition:
+	StatementClass* retStatement = new StatementClass();
+	retStatement->start = token2->transAux.startLabel;
+	string reg = token2->transAux.assignedReg;
+	if (token2->typeInfo.type == DATA_BOOL) {
+		string trueLable = codeBuff.genLabel();		//generate true lable for BP purpose.
+		codeBuff.emit("li $v0, 1");					//save 1 (true) into the reg as said in trueStream.
+		codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+		vector<int> nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+		string falseLabel = codeBuff.genLabel();	//generate true lable for BP purpose.
+		codeBuff.emit("li $v0, 0");					//save 1 (true) into the reg as said in trueStream.
+		string endLable = codeBuff.genLabel();		//generate the rule's ending label.
+		codeBuff.bpatch(token2->transAux.trueList, trueLable);
+		codeBuff.bpatch(token2->transAux.falseList, falseLabel);
+		codeBuff.bpatch(nextList, endLable);
+		/*====== generated code: ====
+		lable_<true>:
+		li $v0, 1
+		j lable_<end>
+		lable_<false>:
+		li $v0, 0
+		lable_<end>:
+		===========================*/
+	}
+	else{
+		codeBuff.emit("move $v0, " + reg);
+		mgr.freeReg(reg);
+	}
+	Func func = symbolsTable.getFunc(currentFuncId);
+	asmCmd.functionEnd(func, symbolsTable);
+
+	delete $2;
+	// codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	// retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+};
+
+Statement : IF M LPAREN ExpBoolValid ScopedStatment N OptionalElse M{
+	
+	TokenClass* 	m1				= dynamic_cast<TokenClass*>($2);
+	TokenClass* 	condition		= dynamic_cast<TokenClass*>($4);
+	StatementClass* statement1 		= dynamic_cast<StatementClass*>($5);
+	TokenClass* 	n 				= dynamic_cast<TokenClass*>($6);
+	StatementClass* statement2 		= dynamic_cast<StatementClass*>($7);
+	TokenClass* 	m2				= dynamic_cast<TokenClass*>($8);
+	StatementClass* retStatement	= new StatementClass();
+	
+	retStatement->start  = m1->transAux.quad;
+	codeBuff.bpatch(condition->transAux.trueList, statement1->start);
+	codeBuff.bpatch(condition->transAux.falseList, statement2->start);
+	codeBuff.bpatch(n->transAux.nextList, m2->transAux.quad);
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retStatement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = retStatement;
+	delete $2;
+	delete $4;
+	delete $5;
+	delete $6;
+	delete $7;
+	delete $8;
+};
+
+Statement : WHILE LPAREN M ExpBoolValid {
+	++numOfWhileContaining;
+	//HW5 addition:
+	statementStack.push(new StatementClass()); 
+
+} M ScopedStatment N M{	
+	--numOfWhileContaining;
+	//HW5 addition:
+	//set local vars for comfort:
+	TokenClass* m1 				= dynamic_cast<TokenClass*>($3);
+	TokenClass* conditionToken 	= dynamic_cast<TokenClass*>($4);
+	TokenClass* m2 				= dynamic_cast<TokenClass*>($6);
+	TokenClass* n 				= dynamic_cast<TokenClass*>($8);
+	TokenClass* m3 				= dynamic_cast<TokenClass*>($9);
+	StatementClass* statement 	= statementStack.top();
+	
+	codeBuff.bpatch(conditionToken->transAux.trueList, m2->transAux.quad);
+	statement->breakList = CodeBuffer::merge(conditionToken->transAux.falseList, statement->breakList);
+	codeBuff.bpatch(statement->breakList, m3->transAux.quad);
+	codeBuff.bpatch(n->transAux.nextList, m1->transAux.quad);
+	statement->start  = m1->transAux.quad;						//set starting label using the first M marker.
+	statement->breakList.clear();
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	statement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = statement;
+	statementStack.pop();
+
+	delete $3;
+	delete $4;
+	delete $6;
+	delete $8;
+	delete $9;
+};
+
+Statement : BREAK SC{
+	if(numOfWhileContaining == 0){
+		errorUnexpectedBreak(yylineno);
+		exit(1);
+	}
+	
+	//HW5 addition:
+	/*set the starting label:*/
+	StatementClass* statement = new StatementClass();
+	statement->start = codeBuff.genLabel();
+	/*make a jump and save it in the break list:*/
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	statementStack.top()->breakList = CodeBuffer::merge(statementStack.top()->breakList, CodeBuffer::makelist(codeBuff.emit("j ")));
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	statement->nextList = CodeBuffer::makelist(codeBuff.emit("j "));
+	$$ = statement;
+};
+
+/*----------ExpBoolValid----------------*/
+ExpBoolValid: Exp RPAREN{ 
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);
+	verifyBool(token1);
+	$$ = token1;
+};
+
+/*----------OptionalElse----------------*/
+OptionalElse: %empty /*epsilon*/ %prec AND{
+	StatementClass* statement = new StatementClass(); 
+	statement->start = codeBuff.genLabel();	//generate a lable at that location.
+	$$ = statement;	
+};
+
+OptionalElse: ELSE ScopedStatment{
+	$$ = $2;
+};	
+
+ScopedStatment: NewScope Statement EndScope {
+	$$ = $2;
+};
+
+NewScope: %empty /*epsilon*/{
+	symbolsTable.addScope();
+};
+
+EndScope: %empty /*epsilon*/{
+	//TODO: delete symbols from stack.
+	endScope();
+	asmStack.popScopeVars(symbolsTable);
+	printScopeSymbols();
+	symbolsTable.removeScope();
+};
+
+/*----------Call------------------------*/		
+Call : ID LPAREN M ExpList RPAREN{
+	string s = (dynamic_cast<String*>($1))->getString();
+	verifyFunctionPresent(s);
+	Func f = getFuncFromTable(s);
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);
+	vector<string> tmpArgVec;
+	convertTypeInfoVecToStringVec(f.argsTypes, tmpArgVec);
+	if(f.argsTypes.size() != token4->argList.size()){
+		errorPrototypeMismatch(yylineno, s, tmpArgVec);
+		exit(1);
+	}
+	for(int i=0 ; i < f.argsTypes.size() ; ++i){
+		if(f.argsTypes[i] != token4->argList[i]){
+			if(f.argsTypes[i].type != DATA_INT || token4->argList[i].type != DATA_BYTE){
+				errorPrototypeMismatch(yylineno, s, tmpArgVec);
+				exit(1);
+			}
+		}
+	}
+	//start of HW5 part:
+	TokenClass* retToken = new TokenClass(f.funcRetVal);
+	/*start with jumping to the start of the func (at this point all args calculated): */
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	retToken->transAux.afterExp = CodeBuffer::makelist(codeBuff.emit("j "));
+	//for each argument, if bool, calculate BP part:
+	for (int i = 0; i < expListVec.size(); i++){
+		if (expListVec[i]->typeInfo.type != DATA_BOOL){
+			continue;
+		}
+		string reg = mgr.getReg();
+		expListVec[i]->transAux.assignedReg = reg;
+		stringstream trueStream, falseStream, nextStream;
+		string trueLable = codeBuff.genLabel();			//generate true lable for BP purpose.
+		trueStream << "li " << reg << ", 1";			//trueStream = set the reg the value of true.
+		codeBuff.emit(trueStream.str());				//save 1 (true) into the reg as said in trueStream.
+		if (i != (expListVec.size() - 1)){
+			nextStream.clear();
+			nextStream << "j " << expListVec[i+1]->transAux.startLabel;
+			codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+			codeBuff.emit(nextStream.str());
+		} 
+		else {
+			codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+			retToken->transAux.afterExp = CodeBuffer::merge(retToken->transAux.afterExp,CodeBuffer::makelist(codeBuff.emit("j ")));
+		}
+		codeBuff.bpatch(expListVec[i]->transAux.trueList, trueLable);
+
+		/* EXACTLY THE SAME CODE ONLY WITH 0 TO THE REG */
+		string falseLabel = codeBuff.genLabel();		//generate false lable for BP purpose.
+		falseStream << "li " << reg << ", 0";			//falseStream = set the reg the value of false.
+		
+		codeBuff.emit(falseStream.str());
+		if (i != (expListVec.size() - 1)){
+			codeBuff.emit(nextStream.str());
+		}
+		else {
+			codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+			retToken->transAux.afterExp = CodeBuffer::merge(retToken->transAux.afterExp,CodeBuffer::makelist(codeBuff.emit("j ")));
+		}
+		
+		codeBuff.bpatch(expListVec[i]->transAux.falseList, falseLabel);
+	}
+	asmCmd.callFuncWithParams(f, expListVec, symbolsTable);
+	for(int i = 0; i < expListVec.size(); i++){
+		delete expListVec[i];
+	} 
+	expListVec.clear();
+	retToken->transAux.startLabel = (dynamic_cast<TokenClass*>($3))->transAux.quad;
+	delete $1;
+	delete $4;
+	$$ = retToken;
+};
+
+Call : ID LPAREN RPAREN{
+	string s = (dynamic_cast<String*>($1))->getString();
+	verifyFunctionPresent(s);
+	Func f = getFuncFromTable(s);
+	vector<string> tmpArgVec;
+	convertTypeInfoVecToStringVec(f.argsTypes, tmpArgVec);
+	if(f.argsTypes.size() > 0){
+		errorPrototypeMismatch(yylineno, s, tmpArgVec);
+		exit(1);
+	}
+	TokenClass* token = new TokenClass(f.funcRetVal);
+	token->transAux.startLabel = codeBuff.genLabel();
+	asmCmd.callFunc(f);
+	delete $1;
+	$$ = token;
+};
+
+/*----------ExpList---------------------*/
+ExpList	: Exp{
+	TokenClass* retToken = new TokenClass();			//generate a returned token.
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);	//cast and rename the input exp.
+	expListVec.push_back(token1);
+	retToken->argList.push_back(token1->typeInfo);			
+	$$ = retToken;
+};
+
+ExpList	: Exp {expListVec.push_back(dynamic_cast<TokenClass*>($1));} COMMA ExpList{
+	TokenClass* retToken = new TokenClass();				//generate a returned token.
+	//1. add the first exp type to the list.
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//cast and rename the input exp.
+	retToken->argList.push_back(token1->typeInfo);			
+	//2. add the rest of the exp to the vector.
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);		//cast and rename the input exp list.
+	for (vector<TypeInfo>::iterator it = token4->argList.begin(); it != token4->argList.end(); ++it) {
+		retToken->argList.push_back(*it);
+   	}
+	delete $4;
+	$$ = retToken;
+};
+
+/*----------Type------------------------*/
+Type : INT{
+	$$ = new TokenClass(TypeInfo(DATA_INT)); 
+};
+
+Type : BYTE{
+	$$ = new TokenClass(TypeInfo(DATA_BYTE)); 
+};
+
+Type : BOOL{
+	$$ = new TokenClass(TypeInfo(DATA_BOOL)); 
+};
+
+
+/*----------Exp-------------------------*/
+Exp	: LPAREN Exp RPAREN{
+	$$ = $2;
+};
+
+Exp : ID LBRACK Exp RBRACK{	
+	string idStr = (dynamic_cast<String*>($1))->getString();
+	//1. verify id is in.
+	verifyIdInSymbols(idStr);
+	//2. get the array type.
+	TypeInfo arrType = symbolsTable.getIdTypeInfo(idStr);
+	//3. verify valid array type.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	if(token3->typeInfo.type != DATA_BYTE && token3->typeInfo.type != DATA_INT){
+		errorMismatch(yylineno);
+		exit(1);
+	}
+	//4. use array type to determine the returned type or print error.
+	TokenClass* retExp;
+	switch(arrType.type){
+		case DATA_ARR_BYTE:
+			retExp = new TokenClass(TypeInfo(DATA_BYTE));
+			break;
+		case DATA_ARR_INT:
+			retExp = new TokenClass(TypeInfo(DATA_INT));
+			break;
+		case DATA_ARR_BOOL:
+			retExp = new TokenClass(TypeInfo(DATA_BOOL));
+			break;
+		default:
+			errorMismatch(yylineno);
+			exit(1);
+	}
+	string reg = mgr.getReg();
+	string reg3 = token3->transAux.assignedReg;
+	asmStack.getArrEntry(idStr, symbolsTable, reg3, reg);
+	retExp->transAux.assignedReg = reg;
+	checkBoolAndGenPrint(retExp, reg);	//will release register if bool value.
+	mgr.freeReg(reg3);
+	delete $1;
+	delete $3;
+	$$ = retExp;
+};
+
+Exp : Exp PLUS Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.
+	$$ = binOpAction(token1, token3, "+");					//operate usign + sign.
+};
+
+Exp : Exp MINUS Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.		
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.		
+	$$ = binOpAction(token1, token3, "-");					//operate usign - sign.
+};				
+
+Exp : Exp MULT Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.
+	$$ = binOpAction(token1, token3, "*");					//operate usign * sign.
+};	
+
+Exp : Exp DIV Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input left token.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);		//save the input right token.
+	$$ = binOpAction(token1, token3, "/");					//operate usign / sign.
+};
+
+Exp : ID{
+	string s = (dynamic_cast<String*>($1))->getString();	//check if id exists, exit if not.
+	verifyIdInSymbols(s);									//get its type from symbol table.
+	TypeInfo typeInfo = symbolsTable.getIdTypeInfo(s);		//make token out of type and return it.
+	TokenClass* token = new TokenClass(typeInfo);	
+	string reg;			
+	token->transAux.startLabel = codeBuff.genLabel();		//generate a lable.
+	if( typeInfo.type == DATA_ARR_BOOL ||
+		typeInfo.type == DATA_ARR_INT  ||
+		typeInfo.type == DATA_ARR_BYTE ){
+		token->typeInfo.id = s;
+	}else{
+		reg = asmStack.loadVar(s, symbolsTable);			//assign a register.
+		token->transAux.assignedReg = reg;					//save the assigned register.
+		checkBoolAndGenPrint(token, reg);					//generate and print a boolean branch.
+	}
+	delete $1;
+	$$ = token;
+};
+
+Exp : Call{
+	TokenClass* token = dynamic_cast<TokenClass*>($1);		//save the input token.
+	string reg = mgr.getReg();								//assign a register.
+	token->transAux.assignedReg = reg;						//save the assigned register.				
+	stringstream getRetValStream;
+	getRetValStream << "move " << reg << ", $v0";			//save call's return value inside the assigned reg.
+	codeBuff.emit(getRetValStream.str());					//write the line to buffer.
+	checkBoolAndGenPrint(token, reg);						//generate and print a boolean branch.
+	$$ = token;												//save the generated token.
+};
+
+Exp : NUM{
+	Num* inpNum = dynamic_cast<Num*>($1);
+	int num = inpNum->getNum();
+	TokenClass* token = new TokenClass(TypeInfo(DATA_INT));		//generate a returned token.
+	saveInputNumIntoToken(token, num);							//save needed data into token.
+	delete $1;													//clean allocated memory.
+	$$ = token;													//save the generated token.
+};
+
+Exp : NUM B{
+	Num* inpNum = dynamic_cast<Num*>($1);
+	int num = inpNum->getNum();
+	if( num < 0 || num > 255){									//validate byte range.
+		errorByteTooLarge(yylineno,inpNum->getStr());
+		delete $1;
+		exit(1);
+	}
+	TokenClass* token = new TokenClass(TypeInfo(DATA_BYTE));	//generate a returned token.
+	saveInputNumIntoToken(token, num);							//save needed data into token.
+	delete $1;													//clean allocated memory.
+	$$ = token;													//save the generated token.
+};
+
+Exp : STRING{
+	TokenClass* token = new TokenClass(TypeInfo(DATA_STRING));	//generate a returned token.
+	String* inputString = dynamic_cast<String*>($1);			//save the input token.				
+	
+	string str = inputString->getString();
+	token->transAux.startLabel = codeBuff.genLabel();			//generate a new lable.
+	token->transAux.assignedReg = asmCmd.saveStringInDataSection(str);
+	
+	delete $1;													//clean allocated memory.
+	$$ = token;													//save the generated token.
+};
+
+Exp : TRUE{
+	$$ = basicBoolPrint(true);
+};
+
+Exp : FALSE{
+	$$ = basicBoolPrint(false);
+};
+
+Exp : NOT Exp{
+	TokenClass* token2 = dynamic_cast<TokenClass*>($2);					//save the input token.
+	TokenClass* resultToken = logicalOpAction(token2,token2,"NOT","");	
+	$$ = resultToken;													//save the generated token.
+};
+
+Exp : Exp AND M Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);					//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);				
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);				
+	TokenClass* resultToken = logicalOpAction(token1, token4, "AND",token3->transAux.quad);	
+	$$ = resultToken;													//save the generated token.
+};
+
+Exp : Exp OR M Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);				//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);				
+	TokenClass* token4 = dynamic_cast<TokenClass*>($4);				
+	TokenClass* resultToken = logicalOpAction(token1, token4, "OR", token3->transAux.quad);
+	$$ = resultToken;												//save the generated token.
+};
+
+Exp : Exp EQUAL Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);			//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);	
+	TokenClass* resultToken = relOpAction(token1,token3,"beq ");//validate its a number and act.
+	$$ = resultToken;											//save the generated token.
+};
+
+Exp : Exp NOT_EQUAL Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);			//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	TokenClass* resultToken = relOpAction(token1,token3,"bne ");//validate its a number and act.
+	$$ = resultToken;											//save the generated token.
+};
+
+Exp : Exp SMALLER_THAN Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	TokenClass* resultToken = relOpAction(token1,token3,"blt ");//validate its a number and act.
+	$$ = resultToken;										//save the generated token.
+};
+
+Exp : Exp GREATER_THAN Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	TokenClass* resultToken = relOpAction(token1,token3,"bgt ");//validate its a number and act.
+	$$ = resultToken;										//save the generated token.
+};
+
+Exp : Exp SMALLER_EQ_THAN Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);		//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	TokenClass* resultToken = relOpAction(token1,token3,"ble ");//validate its a number and act.
+	$$ = resultToken;										//save the generated token.
+};
+
+Exp : Exp GREATER_EQ_THAN Exp{
+	TokenClass* token1 = dynamic_cast<TokenClass*>($1);			//save the input tokens.
+	TokenClass* token3 = dynamic_cast<TokenClass*>($3);
+	TokenClass* resultToken = relOpAction(token1,token3,"bge ");//validate its a number and act.
+	$$ = resultToken;											//save the generated token.
+};
+
+M 	: %empty /*epsilon*/{
+	TokenClass* token = new TokenClass();		//generate token.
+	token->transAux.quad = codeBuff.genLabel();	//generate a lable at that location.
+	$$ = token;									//save the token to be returned.
+};
+
+N 	: %empty /*epsilon*/{
+	TokenClass* token = new TokenClass();									//generate token.
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	token->transAux.nextList = CodeBuffer::makelist(codeBuff.emit("j "));	//generate a jump command and set into nextList to complete it later.
+	$$ = token;																//save the token to be returned.
+};
+
+%%
+/*========================================================
+			section 3	-	c user routines
+========================================================*/
+TokenClass* basicBoolPrint(bool isTrue){
+	TokenClass* token = new TokenClass(TypeInfo(DATA_BOOL));			//save the input token.
+	token->transAux.startLabel = codeBuff.genLabel(); 					//generate starting point.
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	int jumpAddress = codeBuff.emit("j ");								//create a new jumping point.
+	if(isTrue){
+		token->transAux.trueList = CodeBuffer::makelist(jumpAddress);	//save it's address in the list.
+	}
+	else{
+		token->transAux.falseList = CodeBuffer::makelist(jumpAddress);	//save it's address in the list.	
+	}
+	return token;														//save the generated token.
+}
+
+void checkBoolAndGenPrint(TokenClass* token, string reg){
+	if (token->typeInfo.type == DATA_BOOL){	//in case its a bool data - generate a true/false BP infrastructure.
+		stringstream branchStream;
+		branchStream << "beq " << reg << ", 1, ";				
+		token->transAux.trueList = CodeBuffer::makelist(codeBuff.emit(branchStream.str()));
+		codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+		token->transAux.falseList = CodeBuffer::makelist(codeBuff.emit("j "));
+		mgr.freeReg(reg);					//in this case no need to save the bool value in the reg, so release it.
+		token->transAux.assignedReg = "";	//delete reg from token.
+	}
+}
+
+void saveInputNumIntoToken(TokenClass* token, int num){
+	token->transAux.startLabel = codeBuff.genLabel();	//generate starting point.
+	string reg = mgr.getReg();
+	token->transAux.assignedReg = reg;					//save the register name at the token.
+	mgr.storeToRegImm(reg,num);
+}
+
+void relOpPrint(string op, TokenClass* resTok, string leftReg, string rightReg){
+	resTok->transAux.startLabel = codeBuff.genLabel();
+	stringstream command;
+	command << op << leftReg << ", " << rightReg << ", ";
+	resTok->transAux.trueList = CodeBuffer::makelist(codeBuff.emit(command.str()));
+	codeBuff.emit("# input line number: " + toString(yylineno) + " :: parser.ypp line number: " + toString(1 + __LINE__));
+	resTok->transAux.falseList = CodeBuffer::makelist(codeBuff.emit("j "));
+	mgr.freeReg(leftReg);
+	mgr.freeReg(rightReg);
+}
+
+TokenClass* logicalOpAction(TokenClass* exp1, TokenClass* exp2, string op, string quad){
+	verifyBool(exp1,exp2);
+	TokenClass* token = new TokenClass(TypeInfo(DATA_BOOL));
+	/*use the same starting lable as the first bool.*/
+	token->transAux.startLabel = exp1->transAux.startLabel;	
+	if(op == "NOT"){
+		/*switch all the places for true with false.*/
+		token->transAux.trueList 	= exp1->transAux.falseList; 
+		/*switch all the places for false with true.*/
+		token->transAux.falseList  	= exp1->transAux.trueList;	
+	}
+	else if(op == "AND"){
+		/*for AND op we need to merge false lists - one false jumps to "false code section".*/
+		token->transAux.falseList = CodeBuffer::merge(exp1->transAux.falseList, exp2->transAux.falseList);
+		/*for AND op we need all previus true (left-most) values to jump to M position.*/
+		codeBuff.bpatch(exp1->transAux.trueList, quad);
+		/*current trueList will have the same as right Exp list.*/
+		token->transAux.trueList = exp2->transAux.trueList;
+	}
+	else if(op == "OR"){
+		/*for OR op we need to merge true lists - one true jumps to "true code section".*/
+		token->transAux.trueList = CodeBuffer::merge(exp1->transAux.trueList, exp2->transAux.trueList);
+		/*for OR op we need all previus false (left-most) values to jump to M position.*/
+		codeBuff.bpatch(exp1->transAux.falseList, quad);
+		/*current falseList will have the same as right Exp list.*/
+		token->transAux.falseList = exp2->transAux.falseList; 
+	}
+	if(exp1 != exp2){
+		delete exp2;
+	}
+	delete exp1;
+	return token;
+}
+
+TokenClass* relOpAction(TokenClass* exp1, TokenClass* exp2, string op){
+	verifyNumber(exp1, exp2);
+	TokenClass* retExp = new TokenClass(TypeInfo(DATA_BOOL));
+	relOpPrint(op, retExp, exp1->transAux.assignedReg, exp2->transAux.assignedReg);
+	if(exp1 != exp2){
+		delete exp2;
+	}
+	delete exp1;
+	return retExp;
+}
+
+TokenClass* binOpAction(TokenClass* exp1, TokenClass* exp2, string op){
+	verifyNumber(exp1, exp2);
+	TypeInfo retType(DATA_INT);
+	bool isByte = false;
+	if(exp1->typeInfo.type == DATA_BYTE && exp2->typeInfo.type == DATA_BYTE){
+		retType.type = DATA_BYTE;
+		isByte = true;
+	}
+	TokenClass* token = new TokenClass(retType);
+	string leftReg = exp1->transAux.assignedReg;
+	string rightReg = exp2->transAux.assignedReg; 
+	
+	if(op == "+"){
+		arithMgr.add(leftReg, rightReg, isByte);
+	}
+	else if(op == "-"){
+		arithMgr.sub(leftReg, rightReg, isByte);
+	}
+	else if(op == "*"){
+		arithMgr.multiply(leftReg, rightReg, isByte);
+	}
+	else if(op == "/"){
+		arithMgr.divide(leftReg, rightReg, isByte);	
+	}
+	token->transAux.assignedReg = leftReg;
+	mgr.freeReg(rightReg);
+	delete exp2;
+	delete exp1;
+	return token;
+}
+
+void verifyNumber(TokenClass* e){
+	if(e->typeInfo.type != DATA_BYTE && e->typeInfo.type != DATA_INT){
+		errorMismatch(yylineno);
+		exit(1);
+	}
+}
+
+void verifyNumber(TokenClass* e1, TokenClass* e2){
+	verifyNumber(e1);
+	verifyNumber(e2);
+}
+
+void verifyBool(TokenClass* e){
+	if(e->typeInfo.type != DATA_BOOL){
+		errorMismatch(yylineno);
+		exit(1);
+	}
+}
+
+void verifyBool(TokenClass* e1, TokenClass* e2){
+	verifyBool(e1);
+	verifyBool(e2);
+}
+
+void verifyIdNotInSymbols(string id){
+	if(symbolsTable.isIdInTable(id)){
+		errorDef(yylineno, id);
+		exit(1);
+	}
+}
+
+void verifyIdInSymbols(string id){
+	if(!(symbolsTable.isIdInTable(id))){
+		errorUndef(yylineno, id);
+		exit(1);
+	}
+}
+
+void verifyFunctionPresent(string id){
+	if(!(symbolsTable.isFuncInTable(id))){
+		errorUndefFunc(yylineno, id);
+		exit(1);
+	}
+}
+
+void verifyIdIsntFunction(string id){
+	if(symbolsTable.isFuncInTable(id)){
+		errorUndef(yylineno, id);
+		exit(1);
+	}
+}
+
+Func getFuncFromTable(string id){
+	return symbolsTable.getFunc(id);
+}
+
+void convertTypeInfoVecToStringVec(vector<TypeInfo>& typeVec, vector<string>& outputVec){
+	for(int i=0 ; i<typeVec.size() ; ++i){
+		outputVec.push_back(typeVec[i].getAsStringWithArraySizes());
+	}
+}
+
+void yyerror(const char*) {
+	errorSyn(yylineno);
+	exit(1);
+}
+
+void printFunctions(){
+	/*vector<Func> funcsVec = symbolsTable.getFuncs();
+	vector<string> argNameVec;
+	for (vector<Func>::iterator it = funcsVec.begin(); it != funcsVec.end(); ++it) {
+		convertTypeInfoVecToStringVec(it->argsTypes ,argNameVec);
+		cout << it->id << " " << makeFunctionType(it->funcRetVal.getAsString(), argNameVec) << " 0" << endl;
+		argNameVec.clear();
+	}*/
+}
+
+void printScopeSymbols(){
+	symbolsTable.printCurrentScopeSymbols();
+}
+
+DATA_TYPE getTypeAsArrType(DATA_TYPE type){
+	DATA_TYPE arrType;
+	switch(type){
+		case DATA_BOOL:
+			arrType = DATA_ARR_BOOL;
+			break;
+    	case DATA_BYTE:
+    		arrType = DATA_ARR_BYTE;
+    		break;
+    	case DATA_INT:
+    		arrType = DATA_ARR_INT;
+    		break;
+	}
+	return arrType;
+}
+
+int main() {	
+	//add "print" func to symbol table
+    vector<TypeInfo> printArgs;
+    printArgs.push_back(TypeInfo(DATA_STRING));
+    string funcName = string("print");
+    Func func(funcName, printArgs, TypeInfo(DATA_VOID));
+	symbolsTable.addFuncSymbol(func);
+
+    //add "printi" func to symbol table
+    vector<TypeInfo> printiArgs;
+    printiArgs.push_back(TypeInfo(DATA_INT));
+    funcName = string("printi");
+    func = Func(funcName, printiArgs, TypeInfo(DATA_VOID));
+	symbolsTable.addFuncSymbol(func);
+	
+	int result = yyparse();
+	if (result != 0) {
+		errorSyn(yylineno);
+		exit(1);
+	}
+	
+	if (!isMainExist) {
+	   errorMainMissing();
+	   exit(1);
+    }
+    
+	//end of global scope
+	endScope();   
+	printFunctions();
+	mgr.print();
+	
+	return 0;
+}

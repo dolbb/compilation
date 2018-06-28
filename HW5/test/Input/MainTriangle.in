@@ -1,0 +1,30 @@
+void main(){
+	{
+		{
+			{
+				{
+					{
+						{
+							{
+								{
+									{
+										return;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void f(int x,int y[3],int z){
+	int a[3];
+	{
+		bool c;
+		byte d;
+	}
+	bool w;
+}

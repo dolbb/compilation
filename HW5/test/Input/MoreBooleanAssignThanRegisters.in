@@ -1,0 +1,52 @@
+void main(){
+	bool a;
+	bool c;
+	bool d;
+	bool e;
+	bool f;
+	bool g;
+	bool h;
+	bool i;
+	bool j;
+	bool k;
+	bool l;
+	bool m;
+	bool n;
+	bool o;
+	bool p;
+	bool q;
+	bool r;
+	bool s;
+	bool t;
+	bool u;
+	bool v;
+	bool w;
+	bool x;
+	bool y;
+	bool z;
+	c = a;
+	d = c;
+	e = d;
+	f = e;
+	g = f or f;
+	h = g;
+	i = h;
+	j = i;
+	k = j and j and not j;
+	l = l; // Equal to itself! :O // Don't optimize!!!! :)
+	m = l;
+	n = m;
+	o = n;
+	p = not o;
+	q = t;
+	r = t;
+	s = t;
+	t = w;
+	u = t;
+	v = w;
+	w = x;
+	x = y;
+	y = z;
+	z = a;
+
+}

@@ -1,0 +1,8 @@
+int fun(){
+	int x[3];
+	return x[1]; // It is an int, not an array
+}
+
+void main(){
+	fun();
+}

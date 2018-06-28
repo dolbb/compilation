@@ -1,0 +1,31 @@
+void printResult(int value){
+	printi(value);
+	print("\n");
+}
+
+void main(){
+	print("Credit to Nir Chachamotivz on edge case in binop implementation :)\n");
+	int minusOne = 0 - 1;
+
+	printResult(250 + 6); // It's 256 ;)
+	printResult(250 b + 6 b); // It's 0 :D
+	printResult(16 * 16); // It's 256 ;)
+	printResult(16 b * 16 b); // It's 0 :D
+	printResult(250 + 6); // It's 256 ;)
+	printResult(250 b + 6 b); // It's 0 :D
+	printResult(255 - minusOne); // It's 256 ;)
+	printResult(255 / minusOne); // It's 256 ;)
+
+	// At least one Integer ... people could have misinterrupted as && and not ||
+	// Therefore, I am testing :)
+
+	printResult(250 b + 6); // It's 256 ;)
+	printResult(250 + 6 b); // It's 256 ;)
+	printResult(16 b * 16); // It's 256 ;)
+	printResult(16 * 16 b); // It's 256 :D
+	printResult(255 b - minusOne); // It's 256 :D
+	printResult(255 b / minusOne); // It's -255 :D
+
+
+	
+}

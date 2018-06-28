@@ -1,0 +1,15 @@
+bool f(bool z){
+	return not z;
+}
+void g(int x[42]){
+	printi(3);
+	return;
+}
+void main(){
+	bool a[250];
+	int x[41];
+	a[x[20]] = f(f(f(f(f(f(f(f(false))))))));
+	f(true);
+	f(a[x[3]]);
+	g(x);
+}

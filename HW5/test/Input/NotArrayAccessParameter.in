@@ -1,0 +1,8 @@
+void notArray(int x){
+	return;
+}
+
+void main(){
+	int y;
+	notArray(y[1]);
+}

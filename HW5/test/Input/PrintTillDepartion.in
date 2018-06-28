@@ -1,0 +1,12 @@
+bool printTillDepartion(int x){
+	print("Hello");
+	x = x + 1;
+	return x < 8;
+}
+
+void main(){
+	int i = 0;
+	while(printTillDepartion(i)){
+		i = i + 1;
+	}
+}

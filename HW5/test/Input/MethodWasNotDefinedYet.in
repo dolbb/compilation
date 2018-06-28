@@ -1,0 +1,11 @@
+void f(){
+	g();
+}
+
+
+// While g is defined later on...
+// Methods can be used only if were defined from above
+
+void g(){
+	return;
+}
