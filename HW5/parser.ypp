@@ -124,18 +124,20 @@ FuncDecl : 	RetType {
 				//RAN
 				asmCmd.functionInit(func);
 			}
-	  		RPAREN LBRACE Statements RBRACE EndScope M{
+	  		RPAREN LBRACE Statements RBRACE M EndScope {
 	//3. change funcReturnDataType to DATA_INVALID.
 	funcReturnDataType.type = DATA_INVALID; 
+	
+	StatementClass* statement = dynamic_cast<StatementClass*>($11);
+	TokenClass* m = dynamic_cast<TokenClass*>($13);
+	codeBuff.bpatch(statement->nextList, m->transAux.quad);
+	
 	//RAN
 	string id = (dynamic_cast<String*>($4))->getString();
 	Func func = symbolsTable.getFunc(id);
 	asmCmd.functionEnd(func, symbolsTable);
 
-	//TODO: check how to stop the loop
-	StatementClass* statement = dynamic_cast<StatementClass*>($11);
-	TokenClass* m = dynamic_cast<TokenClass*>($14);
-	codeBuff.bpatch(statement->nextList, m->transAux.quad);
+	
 };
 
 /*----------RetType---------------------*/
